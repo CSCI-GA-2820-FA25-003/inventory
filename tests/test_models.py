@@ -92,3 +92,88 @@ class TestProduct(TestCase):
         self.assertIsNotNone(data.created_at)
         self.assertIsNotNone(data.last_updated)
         self.assertLessEqual(data.created_at, data.last_updated)
+
+    def test_update_product(self):
+        """It should update a Product and persist changes"""
+        # Arrange. create and save old data
+        product = ProductFactory()
+        product.create()
+        self.assertIsNotNone(product.id)
+        old_name = product.name
+        old_qty = product.quantity
+        old_cat = product.category
+        old_avail = product.available
+
+        # Act. change and use update to write into db
+        product.name = f"Updated {old_name}"
+        product.quantity = old_qty + 5
+        product.category = f"{old_cat}-UPDATED"
+        product.available = not old_avail
+        product.update()  # use update to write into db
+
+        # Assert. search in db
+        found = Product.find(product.id)
+        self.assertIsNotNone(found)
+        self.assertEqual(found.name, f"Updated {old_name}")
+        self.assertEqual(found.quantity, old_qty + 5)
+        self.assertEqual(found.category, f"{old_cat}-UPDATED")
+        self.assertEqual(found.available, (not old_avail))
+
+        if hasattr(found, "created_at") and hasattr(found, "last_updated"):
+            self.assertGreaterEqual(found.last_updated, found.created_at)
+
+        self.assertEqual(len(Product.all()), 1)
+
+    def test_delete_product(self):
+        """It should delete a Product"""
+        # Arrange
+        product = ProductFactory()
+        product.create()
+        self.assertEqual(len(Product.all()), 1)
+
+        # Act
+        product.delete()
+
+        # Assert
+        self.assertEqual(len(Product.all()), 0)  # check if it equals to 0
+        self.assertIsNone(Product.find(product.id))
+
+    def test_serialize_and_deserialize_product(
+        self,
+    ):  # check if the product and the dictionary correctness,make sure when object come back from jason/dict, it wont miss any data and cause chaos
+        """It should serialize to a dict and deserialize back"""
+        # Arrange
+        original = ProductFactory()
+        original.create()
+
+        # Act: serialize -> dict
+        data = original.serialize()
+        self.assertIsInstance(data, dict)
+
+        clone = Product()
+        clone.deserialize(data)
+
+        # Assert
+        self.assertEqual(clone.name, original.name)
+        self.assertEqual(clone.quantity, original.quantity)
+        self.assertEqual(clone.category, original.category)
+        self.assertEqual(clone.available, original.available)
+        self.assertEqual(clone.created_at, original.created_at)
+        self.assertEqual(clone.last_updated, original.last_updated)
+
+    def test_deserialize_missing_field_raises(self):
+        """It should raise DataValidationError when a required field is missing"""
+        from service.models import DataValidationError
+
+        product = Product()
+
+        bad = {
+            # "name": missing on purpose
+            "quantity": 1,
+            "category": "Cat",
+            "available": True,
+            "created_at": ProductFactory().created_at,
+            "last_updated": ProductFactory().last_updated,
+        }
+        with self.assertRaises(DataValidationError):
+            product.deserialize(bad)
