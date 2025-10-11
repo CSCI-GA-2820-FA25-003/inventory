@@ -92,3 +92,48 @@ class TestProduct(TestCase):
         self.assertIsNotNone(data.created_at)
         self.assertIsNotNone(data.last_updated)
         self.assertLessEqual(data.created_at, data.last_updated)
+
+    def test_update_product(self):
+        """It should update a Product and persist changes"""
+        # Arrange: 创建并保存一条记录
+        product = ProductFactory()
+        product.create()
+        self.assertIsNotNone(product.id)
+        old_name = product.name
+        old_qty = product.quantity
+        old_cat = product.category
+        old_avail = product.available
+
+        # Act: 修改多个字段并调用 update()
+        product.name = f"Updated {old_name}"
+        product.quantity = old_qty + 5
+        product.category = f"{old_cat}-UPDATED"
+        product.available = not old_avail
+        product.update()
+
+        # Assert
+        found = Product.find(product.id)
+        self.assertIsNotNone(found)
+        self.assertEqual(found.name, f"Updated {old_name}")
+        self.assertEqual(found.quantity, old_qty + 5)
+        self.assertEqual(found.category, f"{old_cat}-UPDATED")
+        self.assertEqual(found.available, (not old_avail))
+
+        if hasattr(found, "created_at") and hasattr(found, "last_updated"):
+            self.assertGreaterEqual(found.last_updated, found.created_at)
+
+        self.assertEqual(len(Product.all()), 1)
+
+    def test_delete_product(self):
+        """It should delete a Product"""
+        # Arrange
+        product = ProductFactory()
+        product.create()
+        self.assertEqual(len(Product.all()), 1)
+
+        # Act
+        product.delete()
+
+        # Assert
+        self.assertEqual(len(Product.all()), 0)
+        self.assertIsNone(Product.find(product.id))
