@@ -32,7 +32,7 @@ DATABASE_URI = os.getenv(
 
 
 ######################################################################
-#  P R O D U C T   M O D E L   T E S T   C A S E S
+# I V E N T O R Y   P R O D U C T   M O D E L   T E S T   C A S E S
 ######################################################################
 # pylint: disable=too-many-public-methods
 class TestProduct(TestCase):
@@ -62,7 +62,7 @@ class TestProduct(TestCase):
         db.session.remove()
 
     ######################################################################
-    #  T E S T   C A S E S
+    # I V E N T O R Y  T E S T   C A S E S
     ######################################################################
 
     def test_create_product(self):
