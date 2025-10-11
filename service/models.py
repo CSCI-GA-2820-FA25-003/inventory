@@ -120,7 +120,7 @@ class Product(db.Model):
         return self
 
     ##################################################
-    # CLASS METHODS
+    # CLASS METHODS INVENTORY
     ##################################################
 
     @classmethod
