@@ -23,8 +23,8 @@ import os
 import logging
 from unittest import TestCase
 from wsgi import app
-from service.models import Product, DataValidationError, db
-from .factories import ProductFactory
+from service.models import Inventory, DataValidationError, db
+from .factories import InventoryFactory
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
@@ -35,8 +35,8 @@ DATABASE_URI = os.getenv(
 # I V E N T O R Y   P R O D U C T   M O D E L   T E S T   C A S E S
 ######################################################################
 # pylint: disable=too-many-public-methods
-class TestProduct(TestCase):
-    """Test Cases for Product Model"""
+class TestInventory(TestCase):
+    """Test Cases for Inventory Model"""
 
     @classmethod
     def setUpClass(cls):
@@ -54,7 +54,7 @@ class TestProduct(TestCase):
 
     def setUp(self):
         """This runs before each test"""
-        db.session.query(Product).delete()  # clean up the last tests
+        db.session.query(Inventory).delete()  # clean up the last tests
         db.session.commit()
 
     def tearDown(self):
@@ -65,54 +65,54 @@ class TestProduct(TestCase):
     # I V E N T O R Y  T E S T   C A S E S
     ######################################################################
 
-    def test_create_product(self):
-        """It should create a Product and verify all fields"""
-        # Arrange: create a fake product using the factory
-        product = ProductFactory()
+    def test_create_Inventory(self):
+        """It should create a Inventory and verify all fields"""
+        # Arrange: create a fake Inventory using the factory
+        Inventory = InventoryFactory()
 
         # Act: save it to the database
-        product.create()
+        Inventory.create()
 
-        # Assert: verify product was created and retrievable
-        self.assertIsNotNone(product.id)
+        # Assert: verify Inventory was created and retrievable
+        self.assertIsNotNone(Inventory.id)
 
-        found = Product.all()
+        found = Inventory.all()
         self.assertEqual(len(found), 1)
 
-        data = Product.find(product.id)
+        data = Inventory.find(Inventory.id)
         self.assertIsNotNone(data)
 
         # Check each field matches
-        self.assertEqual(data.name, product.name)
-        self.assertEqual(data.quantity, product.quantity)
-        self.assertEqual(data.category, product.category)
-        self.assertEqual(data.available, product.available)
+        self.assertEqual(data.name, Inventory.name)
+        self.assertEqual(data.quantity, Inventory.quantity)
+        self.assertEqual(data.category, Inventory.category)
+        self.assertEqual(data.available, Inventory.available)
 
         # Timestamps should exist and be datetime objects
         self.assertIsNotNone(data.created_at)
         self.assertIsNotNone(data.last_updated)
         self.assertLessEqual(data.created_at, data.last_updated)
 
-    def test_update_product(self):
-        """It should update a Product and persist changes"""
+    def test_update_Inventory(self):
+        """It should update a Inventory and persist changes"""
         # Arrange. create and save old data
-        product = ProductFactory()
-        product.create()
-        self.assertIsNotNone(product.id)
-        old_name = product.name
-        old_qty = product.quantity
-        old_cat = product.category
-        old_avail = product.available
+        Inventory = InventoryFactory()
+        Inventory.create()
+        self.assertIsNotNone(Inventory.id)
+        old_name = Inventory.name
+        old_qty = Inventory.quantity
+        old_cat = Inventory.category
+        old_avail = Inventory.available
 
         # Act. change and use update to write into db
-        product.name = f"Updated {old_name}"
-        product.quantity = old_qty + 5
-        product.category = f"{old_cat}-UPDATED"
-        product.available = not old_avail
-        product.update()  # use update to write into db
+        Inventory.name = f"Updated {old_name}"
+        Inventory.quantity = old_qty + 5
+        Inventory.category = f"{old_cat}-UPDATED"
+        Inventory.available = not old_avail
+        Inventory.update()  # use update to write into db
 
         # Assert. search in db
-        found = Product.find(product.id)
+        found = Inventory.find(Inventory.id)
         self.assertIsNotNone(found)
         self.assertEqual(found.name, f"Updated {old_name}")
         self.assertEqual(found.quantity, old_qty + 5)
@@ -122,35 +122,35 @@ class TestProduct(TestCase):
         if hasattr(found, "created_at") and hasattr(found, "last_updated"):
             self.assertGreaterEqual(found.last_updated, found.created_at)
 
-        self.assertEqual(len(Product.all()), 1)
+        self.assertEqual(len(Inventory.all()), 1)
 
-    def test_delete_product(self):
-        """It should delete a Product"""
+    def test_delete_Inventory(self):
+        """It should delete a Inventory"""
         # Arrange
-        product = ProductFactory()
-        product.create()
-        self.assertEqual(len(Product.all()), 1)
+        Inventory = InventoryFactory()
+        Inventory.create()
+        self.assertEqual(len(Inventory.all()), 1)
 
         # Act
-        product.delete()
+        Inventory.delete()
 
         # Assert
-        self.assertEqual(len(Product.all()), 0)  # check if it equals to 0
-        self.assertIsNone(Product.find(product.id))
+        self.assertEqual(len(Inventory.all()), 0)  # check if it equals to 0
+        self.assertIsNone(Inventory.find(Inventory.id))
 
-    def test_serialize_and_deserialize_product(
+    def test_serialize_and_deserialize_Inventory(
         self,
-    ):  # check if the product and the dictionary correctness,make sure when object come back from jason/dict, it wont miss any data and cause chaos
+    ):  # check if the Inventory and the dictionary correctness,make sure when object come back from jason/dict, it wont miss any data and cause chaos
         """It should serialize to a dict and deserialize back"""
         # Arrange
-        original = ProductFactory()
+        original = InventoryFactory()
         original.create()
 
         # Act: serialize -> dict
         data = original.serialize()
         self.assertIsInstance(data, dict)
 
-        clone = Product()
+        clone = Inventory()
         clone.deserialize(data)
 
         # Assert
@@ -162,18 +162,17 @@ class TestProduct(TestCase):
         self.assertEqual(clone.last_updated, original.last_updated)
 
     def test_deserialize_missing_field_raises(self):
-        """It should raise DataValidationError when a required field is missing"""
-        from service.models import DataValidationError
-
-        product = Product()
+        inv = Inventory()
+        sample = InventoryFactory()
 
         bad = {
-            # "name": missing on purpose
-            "quantity": 1,
-            "category": "Cat",
-            "available": True,
-            "created_at": ProductFactory().created_at,
-            "last_updated": ProductFactory().last_updated,
+            # "name": missing
+            "quantity": sample.quantity,
+            "category": sample.category,
+            "available": sample.available,
+            "created_at": sample.created_at,
+            "last_updated": sample.last_updated,
         }
+
         with self.assertRaises(DataValidationError):
-            product.deserialize(bad)
+            inv.deserialize(bad)

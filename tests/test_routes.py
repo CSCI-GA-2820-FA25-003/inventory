@@ -15,7 +15,7 @@
 ######################################################################
 
 """
-TestProduct API Service Test Suite
+Testinventory API Service Test Suite
 """
 
 # pylint: disable=duplicate-code
@@ -24,11 +24,13 @@ import logging
 from unittest import TestCase
 from wsgi import app
 from service.common import status
-from service.models import db, Product
+from service.models import db, Inventory
+from .factories import InventoryFactory
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
 )
+BASE_URL = "/inventory"
 
 
 ######################################################################
@@ -56,7 +58,7 @@ class TestYourResourceService(TestCase):
     def setUp(self):
         """Runs before each test"""
         self.client = app.test_client()
-        db.session.query(Product).delete()  # clean up the last tests
+        db.session.query(Inventory).delete()  # clean up the last tests
         db.session.commit()
 
     def tearDown(self):
@@ -72,4 +74,73 @@ class TestYourResourceService(TestCase):
         resp = self.client.get("/")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
-    # Todo: Add your test cases here...
+    # ----------------------------------------------------------
+    # TEST CREATE
+    # ----------------------------------------------------------
+    def test_create_Inventory(self):
+        """It should Create a new Inventory"""
+        test_Inventory = InventoryFactory()
+        logging.debug("Test Inventory: %s", test_Inventory.serialize())
+        response = self.client.post(BASE_URL, json=test_Inventory.serialize())
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Make sure location header is set
+        location = response.headers.get("Location", None)
+        self.assertIsNotNone(location)
+
+        # Check the data is correct
+        new_Inventory = response.get_json()
+        self.assertEqual(new_Inventory["name"], test_Inventory.name)
+        self.assertEqual(new_Inventory["category"], test_Inventory.category)
+        self.assertEqual(new_Inventory["available"], test_Inventory.available)
+        self.assertEqual(new_Inventory["gender"], test_Inventory.gender.name)
+
+        # Check that the location header was correct
+        # todo : umcommment this code when get_inventory is implemented
+        # response = self.client.get(location)
+        # self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # new_Inventory = response.get_json()
+        # self.assertEqual(new_Inventory["name"], test_Inventory.name)
+        # self.assertEqual(new_Inventory["category"], test_Inventory.category)
+        # self.assertEqual(new_Inventory["available"], test_Inventory.available)
+        # self.assertEqual(new_Inventory["gender"], test_Inventory.gender.name)
+
+    # ----------------------------------------------------------
+    # TEST UPDATE
+    # ----------------------------------------------------------
+    def test_update_Inventory(self):
+        """It should Update an existing Inventory"""
+        # create a Inventory to update
+        test_Inventory = InventoryFactory()
+        response = self.client.post(BASE_URL, json=test_Inventory.serialize())
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # update the Inventory
+        new_Inventory = response.get_json()
+        logging.debug(new_Inventory)
+        new_Inventory["category"] = "unknown"
+        response = self.client.put(
+            f"{BASE_URL}/{new_Inventory['id']}", json=new_Inventory
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        updated_Inventory = response.get_json()
+        self.assertEqual(updated_Inventory["category"], "unknown")
+
+    # ----------------------------------------------------------
+    # TEST DELETE
+    # ----------------------------------------------------------
+    def test_delete_Inventory(self):
+        """It should Delete a Inventory"""
+        test_Inventory = self._create_Inventorys(1)[0]
+        response = self.client.delete(f"{BASE_URL}/{test_Inventory.id}")
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(len(response.data), 0)
+        # make sure they are deleted
+        response = self.client.get(f"{BASE_URL}/{test_Inventory.id}")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_non_existing_Inventory(self):
+        """It should Delete a Inventory even if it doesn't exist"""
+        response = self.client.delete(f"{BASE_URL}/0")
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(len(response.data), 0)
