@@ -40,8 +40,8 @@ from service.common import status  # HTTP Status Codes
 ######################################################################
 # CREATE A NEW Inventory #need to rewrite
 ######################################################################
-@app.route("/inventorys", methods=["POST"])
-def create_inventorys():
+@app.route("/inventory", methods=["POST"])
+def create_inventory():
     """
     Create an Inventory
     This endpoint will create a Inventory based the data in the body that is posted
@@ -60,7 +60,7 @@ def create_inventorys():
     app.logger.info("Inventory with new id [%s] saved!", inventory.id)
 
     # Return the location of the new Inventory
-    # location_url = url_for("get_inventorys", inventory_id=inventory.id, _external=True)
+    # location_url = url_for("get_inventory", inventory_id=inventory.id, _external=True)
     location_url = "unknown"
 
     return (
@@ -73,8 +73,8 @@ def create_inventorys():
 ######################################################################
 # UPDATE AN EXISTING PET #need to rewrite
 ######################################################################
-@app.route("/inventorys/<int:inventory_id>", methods=["PUT"])
-def update_inventorys(inventory_id):
+@app.route("/inventory/<int:inventory_id>", methods=["PUT"])
+def update_inventory(inventory_id):
     """
     Update a Inventory
 
@@ -106,8 +106,8 @@ def update_inventorys(inventory_id):
 ######################################################################
 # DELETE A PET #need to rewrite
 ######################################################################
-@app.route("/inventorys/<int:inventory_id>", methods=["DELETE"])
-def delete_inventorys(inventory_id):
+@app.route("/inventory/<int:inventory_id>", methods=["DELETE"])
+def delete_inventory(inventory_id):
     """
     Delete a Inventory
 
