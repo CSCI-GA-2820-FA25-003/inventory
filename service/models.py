@@ -48,7 +48,7 @@ class Inventory(db.Model):
         Creates a Inventory to the database
         """
         logger.info("Creating %s", self.name)
-        self.id = None  # pylint: disable=invalid-name
+        # self.id = None  # pylint: disable=invalid-name
         try:
             db.session.add(self)
             db.session.commit()

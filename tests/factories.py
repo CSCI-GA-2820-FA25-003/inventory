@@ -8,7 +8,6 @@ import factory
 from service.models import Inventory
 from datetime import datetime
 import random
-from .factories import InventoryFactory
 
 
 class InventoryFactory(factory.Factory):

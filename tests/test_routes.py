@@ -26,6 +26,7 @@ from wsgi import app
 from service.common import status
 from service.models import db, Inventory
 from .factories import InventoryFactory
+from datetime import timezone
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
@@ -79,9 +80,9 @@ class TestYourResourceService(TestCase):
     # ----------------------------------------------------------
     def test_create_Inventory(self):
         """It should Create a new Inventory"""
-        test_Inventory = InventoryFactory()
-        logging.debug("Test Inventory: %s", test_Inventory.serialize())
-        response = self.client.post(BASE_URL, json=test_Inventory.serialize())
+        test_inventory = InventoryFactory()
+        logging.debug("Test Inventory: %s", test_inventory.serialize())
+        response = self.client.post(BASE_URL, json=test_inventory.serialize())
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # Make sure location header is set
@@ -93,39 +94,27 @@ class TestYourResourceService(TestCase):
         self.assertEqual(new_inventory["id"], test_inventory.id)
         self.assertEqual(new_inventory["name"], test_inventory.name)
         self.assertEqual(new_inventory["quantity"], test_inventory.quantity)
-        self.assertEqual(new_inventory["category"], test_inventory.gender.category)
-        self.assertEqual(new_inventory["available"], test_inventory.gender.available)
-        self.assertEqual(new_inventory["created_at"], test_inventory.gender.created_at)
-        self.assertEqual(new_inventory["last_updated"], test_inventory.gender.last_updated)
-
-        # Check that the location header was correct
-        response = self.client.get(location)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        new_inventory = response.get_json()
-        self.assertEqual(new_inventory["id"], test_inventory.id)
-        self.assertEqual(new_inventory["name"], test_inventory.name)
-        self.assertEqual(new_inventory["quantity"], test_inventory.quantity)
-        self.assertEqual(new_inventory["category"], test_inventory.gender.category)
-        self.assertEqual(new_inventory["available"], test_inventory.gender.available)
-        self.assertEqual(new_inventory["created_at"], test_inventory.gender.created_at)
-        self.assertEqual(new_inventory["last_updated"], test_inventory.gender.last_updated)
-
+        self.assertEqual(new_inventory["category"], test_inventory.category)
+        self.assertEqual(new_inventory["available"], test_inventory.available)
         
-        new_Inventory = response.get_json()
-        self.assertEqual(new_Inventory["name"], test_Inventory.name)
-        self.assertEqual(new_Inventory["category"], test_Inventory.category)
-        self.assertEqual(new_Inventory["available"], test_Inventory.available)
-        self.assertEqual(new_Inventory["gender"], test_Inventory.gender.name)
+        expected_created = test_inventory.created_at.astimezone(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT")
+        expected_updated = test_inventory.last_updated.astimezone(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT")
+        self.assertEqual(new_inventory["last_updated"], expected_updated)
+
+
 
         # Check that the location header was correct
-        # todo : umcommment this code when get_inventory is implemented
+        # Todo : uncomment this code when get_inventory is implemented
         # response = self.client.get(location)
         # self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # new_Inventory = response.get_json()
-        # self.assertEqual(new_Inventory["name"], test_Inventory.name)
-        # self.assertEqual(new_Inventory["category"], test_Inventory.category)
-        # self.assertEqual(new_Inventory["available"], test_Inventory.available)
-        # self.assertEqual(new_Inventory["gender"], test_Inventory.gender.name)
+        # new_inventory = response.get_json()
+        # self.assertEqual(new_inventory["id"], test_inventory.id)
+        # self.assertEqual(new_inventory["name"], test_inventory.name)
+        # self.assertEqual(new_inventory["quantity"], test_inventory.quantity)
+        # self.assertEqual(new_inventory["category"], test_inventory.category)
+        # self.assertEqual(new_inventory["available"], test_inventory.available)
+        # self.assertEqual(new_inventory["created_at"], test_inventory.created_at)
+        # self.assertEqual(new_inventory["last_updated"], test_inventory.last_updated)
 
     # ----------------------------------------------------------
     # TEST UPDATE

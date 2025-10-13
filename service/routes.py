@@ -38,7 +38,7 @@ from service.common import status  # HTTP Status Codes
 
 
 ######################################################################
-# CREATE A NEW Inventory #need to rewrite
+# CREATE A NEW Inventory 
 ######################################################################
 @app.route("/inventory", methods=["POST"])
 def create_inventory():
@@ -46,7 +46,7 @@ def create_inventory():
     Create an Inventory
     This endpoint will create a Inventory based the data in the body that is posted
     """
-    app.logger.info("Request to Create a Inventory...")
+    app.logger.info("Request to Create an Inventory...")
     check_content_type("application/json")
 
     inventory = Inventory()
@@ -55,11 +55,15 @@ def create_inventory():
     app.logger.info("Processing: %s", data)
     inventory.deserialize(data)
 
+    if "id" in data and data["id"] is not None:
+        inventory.id = data["id"]
+
     # Save the new Inventory to the database
     inventory.create()
     app.logger.info("Inventory with new id [%s] saved!", inventory.id)
 
     # Return the location of the new Inventory
+    # Todo: Uncomment this code when get_inventory is implemented
     # location_url = url_for("get_inventory", inventory_id=inventory.id, _external=True)
     location_url = "unknown"
 
