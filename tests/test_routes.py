@@ -98,6 +98,8 @@ class TestYourResourceService(TestCase):
         self.assertEqual(new_inventory["quantity"], test_inventory.quantity)
         self.assertEqual(new_inventory["category"], test_inventory.gender.category)
         self.assertEqual(new_inventory["available"], test_inventory.gender.available)
+        self.assertEqual(new_inventory["created_at"], test_inventory.gender.created_at)
+        self.assertEqual(new_inventory["last_updated"], test_inventory.gender.last_updated)
 
         # Check that the location header was correct
         response = self.client.get(location)
@@ -108,3 +110,7 @@ class TestYourResourceService(TestCase):
         self.assertEqual(new_inventory["quantity"], test_inventory.quantity)
         self.assertEqual(new_inventory["category"], test_inventory.gender.category)
         self.assertEqual(new_inventory["available"], test_inventory.gender.available)
+        self.assertEqual(new_inventory["created_at"], test_inventory.gender.created_at)
+        self.assertEqual(new_inventory["last_updated"], test_inventory.gender.last_updated)
+
+        
