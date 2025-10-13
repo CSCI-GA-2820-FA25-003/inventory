@@ -38,6 +38,8 @@ BASE_URL = "/inventory"
 #  T E S T   C A S E S
 ######################################################################
 # pylint: disable=too-many-public-methods
+
+
 class TestYourResourceService(TestCase):
     """REST API Server Tests"""
 
@@ -78,7 +80,8 @@ class TestYourResourceService(TestCase):
     # ----------------------------------------------------------
     # TEST CREATE
     # ----------------------------------------------------------
-    def test_create_Inventory(self):
+    # id, name, quantity, category, available, created_at, and last_updated
+    def test_create_inventory(self):
         """It should Create a new Inventory"""
         test_inventory = InventoryFactory()
         logging.debug("Test Inventory: %s", test_inventory.serialize())
