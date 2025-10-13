@@ -15,7 +15,7 @@
 ######################################################################
 
 """
-TestProduct API Service Test Suite
+TestInventory API Service Test Suite
 """
 
 # pylint: disable=duplicate-code
@@ -24,17 +24,20 @@ import logging
 from unittest import TestCase
 from wsgi import app
 from service.common import status
-from service.models import db, Product
+from service.models import db, Inventory
+from .factories import InventoryFactory
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
 )
-
+BASE_URL = "/inventory"
 
 ######################################################################
 #  T E S T   C A S E S
 ######################################################################
 # pylint: disable=too-many-public-methods
+
+
 class TestYourResourceService(TestCase):
     """REST API Server Tests"""
 
@@ -56,7 +59,7 @@ class TestYourResourceService(TestCase):
     def setUp(self):
         """Runs before each test"""
         self.client = app.test_client()
-        db.session.query(Product).delete()  # clean up the last tests
+        db.session.query(Inventory).delete()  # clean up the last tests
         db.session.commit()
 
     def tearDown(self):
@@ -72,4 +75,50 @@ class TestYourResourceService(TestCase):
         resp = self.client.get("/")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
-    # Todo: Add your test cases here...
+    # ----------------------------------------------------------
+    # TEST CREATE
+    # ----------------------------------------------------------
+    # id, name, quantity, category, available, created_at, and last_updated
+    def test_create_inventory(self):
+        """It should Create a new Inventory"""
+        test_inventory = InventoryFactory()
+        logging.debug("Test Inventory: %s", test_inventory.serialize())
+        response = self.client.post(BASE_URL, json=test_inventory.serialize())
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Make sure location header is set
+        location = response.headers.get("Location", None)
+        self.assertIsNotNone(location)
+
+        # Check the data is correct
+        new_inventory = response.get_json()
+        self.assertEqual(new_inventory["name"], test_inventory.name)
+        self.assertEqual(new_inventory["category"], test_inventory.category)
+        self.assertEqual(new_inventory["available"], test_inventory.available)
+        self.assertEqual(new_inventory["quantity"], test_inventory.quantity)
+
+        # optional checks
+        self.assertIn("id", new_inventory)
+        self.assertIsInstance(new_inventory["id"], int)
+        self.assertGreater(new_inventory["id"], 0)
+
+        self.assertIn("created_at", new_inventory)
+        self.assertIn("last_updated", new_inventory)
+        self.assertIsInstance(new_inventory["created_at"], str)
+        self.assertIsInstance(new_inventory["last_updated"], str)
+        self.assertTrue(len(new_inventory["created_at"]) > 0)
+        self.assertTrue(len(new_inventory["last_updated"]) > 0)
+        # To Do: Uncomment after get_inventory is implemented
+        # # Check that the location header was correct
+        # response = self.client.get(location)
+        # self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # new_inventory = response.get_json()
+        # self.assertEqual(new_inventory["name"], test_inventory.name)
+        # self.assertEqual(new_inventory["category"], test_inventory.category)
+        # self.assertEqual(new_inventory["available"], test_inventory.available)
+        # self.assertEqual(new_inventory["quantity"], test_inventory.quantity)
+
+        # # optional checks
+        # self.assertIn("id", new_inventory)
+        # self.assertIsInstance(new_inventory["id"], int)
+        # self.assertGreater(new_inventory["id"], 0)

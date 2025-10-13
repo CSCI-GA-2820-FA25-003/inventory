@@ -23,8 +23,8 @@ import os
 import logging
 from unittest import TestCase
 from wsgi import app
-from service.models import Product, DataValidationError, db
-from .factories import ProductFactory
+from service.models import Inventory, DataValidationError, db
+from .factories import InventoryFactory
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
@@ -35,8 +35,8 @@ DATABASE_URI = os.getenv(
 #  P R O D U C T   M O D E L   T E S T   C A S E S
 ######################################################################
 # pylint: disable=too-many-public-methods
-class TestProduct(TestCase):
-    """Test Cases for Product Model"""
+class TestInventory(TestCase):
+    """Test Cases for Inventory Model"""
 
     @classmethod
     def setUpClass(cls):
@@ -54,7 +54,7 @@ class TestProduct(TestCase):
 
     def setUp(self):
         """This runs before each test"""
-        db.session.query(Product).delete()  # clean up the last tests
+        db.session.query(Inventory).delete()  # clean up the last tests
         db.session.commit()
 
     def tearDown(self):
@@ -65,30 +65,64 @@ class TestProduct(TestCase):
     #  T E S T   C A S E S
     ######################################################################
 
-    def test_create_product(self):
-        """It should create a Product and verify all fields"""
-        # Arrange: create a fake product using the factory
-        product = ProductFactory()
+    def test_create_inventory(self):
+        """It should create a Inventory and verify all fields"""
+        # Arrange: create a fake inventory using the factory
+        inventory = InventoryFactory()
 
         # Act: save it to the database
-        product.create()
+        inventory.create()
 
-        # Assert: verify product was created and retrievable
-        self.assertIsNotNone(product.id)
+        # Assert: verify inventory was created and retrievable
+        self.assertIsNotNone(inventory.id)
 
-        found = Product.all()
+        found = Inventory.all()
         self.assertEqual(len(found), 1)
 
-        data = Product.find(product.id)
+        data = Inventory.find(inventory.id)
         self.assertIsNotNone(data)
 
         # Check each field matches
-        self.assertEqual(data.name, product.name)
-        self.assertEqual(data.quantity, product.quantity)
-        self.assertEqual(data.category, product.category)
-        self.assertEqual(data.available, product.available)
+        self.assertEqual(data.name, inventory.name)
+        self.assertEqual(data.quantity, inventory.quantity)
+        self.assertEqual(data.category, inventory.category)
+        self.assertEqual(data.available, inventory.available)
 
         # Timestamps should exist and be datetime objects
         self.assertIsNotNone(data.created_at)
         self.assertIsNotNone(data.last_updated)
         self.assertLessEqual(data.created_at, data.last_updated)
+
+    def test_serialize_an_inventory(self):
+        """It should serialize an Inventory"""
+        inventory = InventoryFactory()
+        data = inventory.serialize()
+        self.assertNotEqual(data, None)
+        self.assertIn("id", data)
+        self.assertEqual(data["id"], inventory.id)
+        self.assertIn("name", data)
+        self.assertEqual(data["name"], inventory.name)
+        self.assertIn("quantity", data)
+        self.assertEqual(data["quantity"], inventory.quantity)
+        self.assertIn("category", data)
+        self.assertEqual(data["category"], inventory.category)
+        self.assertIn("available", data)
+        self.assertEqual(data["available"], inventory.available)
+        self.assertIn("created_at", data)
+        self.assertEqual(data["created_at"], inventory.created_at)
+        self.assertIn("last_updated", data)
+        self.assertEqual(data["last_updated"], inventory.last_updated)
+
+    def test_deserialize_an_inventory(self):
+        """It should de-serialize an Inventory"""
+        data = InventoryFactory().serialize()
+        inventory = Inventory()
+        inventory.deserialize(data)
+        self.assertNotEqual(inventory, None)
+        self.assertEqual(inventory.id, None)
+        self.assertEqual(inventory.name, data["name"])
+        self.assertEqual(inventory.quantity, data["quantity"])
+        self.assertEqual(inventory.category, data["category"])
+        self.assertEqual(inventory.available, data["available"])
+        self.assertEqual(inventory.created_at, data["created_at"])
+        self.assertEqual(inventory.last_updated, data["last_updated"])

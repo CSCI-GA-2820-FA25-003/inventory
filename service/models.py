@@ -1,5 +1,5 @@
 """
-Models for Product
+Models for Inventory
 
 All of the models are stored in this module
 """
@@ -17,9 +17,9 @@ class DataValidationError(Exception):
     """Used for an data validation errors when deserializing"""
 
 
-class Product(db.Model):
+class Inventory(db.Model):
     """
-    Class that represents a Product
+    Class that represents a Inventory
     """
 
     ##################################################
@@ -41,11 +41,11 @@ class Product(db.Model):
     )
 
     def __repr__(self):
-        return f"<Product {self.name} id=[{self.id}]>"
+        return f"<Inventory {self.name} id=[{self.id}]>"
 
     def create(self):
         """
-        Creates a Product to the database
+        Creates a Inventory to the database
         """
         logger.info("Creating %s", self.name)
         self.id = None  # pylint: disable=invalid-name
@@ -59,7 +59,7 @@ class Product(db.Model):
 
     def update(self):
         """
-        Updates a Product to the database
+        Updates a Inventory to the database
         """
         logger.info("Saving %s", self.name)
         try:
@@ -70,7 +70,7 @@ class Product(db.Model):
             raise DataValidationError(e) from e
 
     def delete(self):
-        """Removes a Product from the data store"""
+        """Removes a Inventory from the data store"""
         logger.info("Deleting %s", self.name)
         try:
             db.session.delete(self)
@@ -81,7 +81,7 @@ class Product(db.Model):
             raise DataValidationError(e) from e
 
     def serialize(self):
-        """Serializes a Product into a dictionary"""
+        """Serializes a Inventory into a dictionary"""
         return {
             "id": self.id,
             "name": self.name,
@@ -94,7 +94,7 @@ class Product(db.Model):
 
     def deserialize(self, data):
         """
-        Deserializes a Product from a dictionary
+        Deserializes a Inventory from a dictionary
 
         Args:
             data (dict): A dictionary containing the resource data
@@ -110,11 +110,11 @@ class Product(db.Model):
             raise DataValidationError("Invalid attribute: " + error.args[0]) from error
         except KeyError as error:
             raise DataValidationError(
-                "Invalid Product: missing " + error.args[0]
+                "Invalid Inventory: missing " + error.args[0]
             ) from error
         except TypeError as error:
             raise DataValidationError(
-                "Invalid Product: body of request contained bad or no data "
+                "Invalid Inventory: body of request contained bad or no data "
                 + str(error)
             ) from error
         return self
@@ -125,22 +125,22 @@ class Product(db.Model):
 
     @classmethod
     def all(cls):
-        """Returns all of the Products in the database"""
-        logger.info("Processing all Products")
+        """Returns all of the Inventorys in the database"""
+        logger.info("Processing all Inventorys")
         return cls.query.all()
 
     @classmethod
     def find(cls, by_id):
-        """Finds a Product by it's ID"""
+        """Finds a Inventory by it's ID"""
         logger.info("Processing lookup for id %s ...", by_id)
         return cls.query.session.get(cls, by_id)
 
     @classmethod
     def find_by_name(cls, name):
-        """Returns all Products with the given name
+        """Returns all Inventorys with the given name
 
         Args:
-            name (string): the name of the Products you want to match
+            name (string): the name of the Inventorys you want to match
         """
         logger.info("Processing name query for %s ...", name)
         return cls.query.filter(cls.name == name)
