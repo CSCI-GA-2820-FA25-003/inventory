@@ -15,28 +15,16 @@
 ######################################################################
 
 """
-Product Service
+YourResourceModel Service
 
 This service implements a REST API that allows you to Create, Read, Update
-and Delete Product
+and Delete YourResourceModel
 """
 
 from flask import jsonify, request, url_for, abort
 from flask import current_app as app  # Import Flask application
-from service.models import Product
+from service.models import Inventory
 from service.common import status  # HTTP Status Codes
-
-
-######################################################################
-# GET INDEX
-######################################################################
-@app.route("/")
-def index():
-    """Root URL response"""
-    return (
-        "Reminder: return some useful information in json format about the service here",
-        status.HTTP_200_OK,
-    )
 
 
 ######################################################################
@@ -44,14 +32,18 @@ def index():
 ######################################################################
 
 
+######################################################################
+# Inventory Service Routes
+######################################################################
+
 
 ######################################################################
-# CREATE A NEW INVENTORY
+# CREATE A NEW Inventory #need to rewrite
 ######################################################################
-@app.route("/inventorys", methods=["POST"])
-def create_inventorys():
+@app.route("/inventory", methods=["POST"])
+def create_inventory():
     """
-    Creates an Inventory
+    Create an Inventory
     This endpoint will create a Inventory based the data in the body that is posted
     """
     app.logger.info("Request to Create a Inventory...")
@@ -68,8 +60,69 @@ def create_inventorys():
     app.logger.info("Inventory with new id [%s] saved!", inventory.id)
 
     # Return the location of the new Inventory
-    location_url = url_for("get_inventorys", inventory_id=inventory.id, _external=True)
-    return jsonify(inventory.serialize()), status.HTTP_201_CREATED, {"Location": location_url}
+    # location_url = url_for("get_inventory", inventory_id=inventory.id, _external=True)
+    location_url = "unknown"
+
+    return (
+        jsonify(inventory.serialize()),
+        status.HTTP_201_CREATED,
+        {"Location": location_url},
+    )
+
+
+######################################################################
+# UPDATE AN EXISTING PET #need to rewrite
+######################################################################
+@app.route("/inventory/<int:inventory_id>", methods=["PUT"])
+def update_inventory(inventory_id):
+    """
+    Update a Inventory
+
+    This endpoint will update a Inventory based the body that is posted
+    """
+    app.logger.info("Request to Update a inventory with id [%s]", inventory_id)
+    check_content_type("application/json")
+
+    # Attempt to find the Inventory and abort if not found
+    inventory = Inventory.find(inventory_id)
+    if not inventory:
+        abort(
+            status.HTTP_404_NOT_FOUND,
+            f"Inventory with id '{inventory_id}' was not found.",
+        )
+
+    # Update the Inventory with the new data
+    data = request.get_json()
+    app.logger.info("Processing: %s", data)
+    inventory.deserialize(data)
+
+    # Save the updates to the database
+    inventory.update()
+
+    app.logger.info("Inventory with ID: %d updated.", inventory.id)
+    return jsonify(inventory.serialize()), status.HTTP_200_OK
+
+
+######################################################################
+# DELETE A PET #need to rewrite
+######################################################################
+@app.route("/inventory/<int:inventory_id>", methods=["DELETE"])
+def delete_inventory(inventory_id):
+    """
+    Delete a Inventory
+
+    This endpoint will delete a Inventory based the id specified in the path
+    """
+    app.logger.info("Request to Delete a inventory with id [%s]", inventory_id)
+
+    # Delete the Inventory if it exists
+    inventory = Inventory.find(inventory_id)
+    if inventory:
+        app.logger.info("Inventory with ID: %d found.", inventory.id)
+        inventory.delete()
+
+    app.logger.info("Inventory with ID: %d delete complete.", inventory_id)
+    return {}, status.HTTP_204_NO_CONTENT
 
 
 ######################################################################
@@ -92,4 +145,3 @@ def check_content_type(content_type) -> None:
         status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
         f"Content-Type must be {content_type}",
     )
-
