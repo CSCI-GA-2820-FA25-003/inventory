@@ -15,7 +15,7 @@
 ######################################################################
 
 """
-Test cases for Pet Model
+Test cases for Inventory Model
 """
 
 # pylint: disable=duplicate-code
@@ -32,7 +32,7 @@ DATABASE_URI = os.getenv(
 
 
 ######################################################################
-#  P R O D U C T   M O D E L   T E S T   C A S E S
+#  I N V E N T O R Y   M O D E L   T E S T   C A S E S
 ######################################################################
 # pylint: disable=too-many-public-methods
 class TestInventory(TestCase):
@@ -126,3 +126,31 @@ class TestInventory(TestCase):
         self.assertEqual(inventory.available, data["available"])
         self.assertEqual(inventory.created_at, data["created_at"])
         self.assertEqual(inventory.last_updated, data["last_updated"])
+
+    def test_update_a_inventory(self):
+        """It should Update a Inventory"""
+        inventory = InventoryFactory()
+        logging.debug(inventory)
+        inventory.id = None
+        inventory.create()
+        logging.debug(inventory)
+        self.assertIsNotNone(inventory.id)
+        # Change it an save it
+        inventory.category = "k9"
+        original_id = inventory.id
+        inventory.update()
+        self.assertEqual(inventory.id, original_id)
+        self.assertEqual(inventory.category, "k9")
+        # Fetch it back and make sure the id hasn't changed
+        # but the data did change
+        inventory = Inventory.all()
+        self.assertEqual(len(inventory), 1)
+        self.assertEqual(inventory[0].id, original_id)
+        self.assertEqual(inventory[0].category, "k9")
+
+    def test_update_no_id(self):
+        """It should not Update a Inventory with no id"""
+        inventory = InventoryFactory()
+        logging.debug(inventory)
+        inventory.id = None
+        self.assertRaises(DataValidationError, inventory.update)
