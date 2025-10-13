@@ -8,6 +8,7 @@ import factory
 from service.models import Product
 from datetime import datetime
 import random
+from .factories import InventoryFactory
 
 
 class ProductFactory(factory.Factory):
@@ -18,7 +19,7 @@ class ProductFactory(factory.Factory):
 
         model = Product
 
-    id = factory.Sequence(lambda n: n + 1)
+    id = factory.Sequence(lambda n: n + 1 )
     name = factory.Faker("word")  # or "sentence" if you want multi-word names
     quantity = factory.LazyFunction(lambda: random.randint(1, 100))
     category = factory.LazyFunction(
