@@ -66,14 +66,10 @@ class TestInventory(TestCase):
     ######################################################################
 
     def test_create_inventory(self):
-        """It should create a Inventory and verify all fields"""
-        # Arrange: create a fake inventory using the factory
+        """It should create an Inventory and verify all fields"""
         inventory = InventoryFactory()
-
-        # Act: save it to the database
         inventory.create()
 
-        # Assert: verify inventory was created and retrievable
         self.assertIsNotNone(inventory.id)
 
         found = Inventory.all()
@@ -82,13 +78,12 @@ class TestInventory(TestCase):
         data = Inventory.find(inventory.id)
         self.assertIsNotNone(data)
 
-        # Check each field matches
         self.assertEqual(data.name, inventory.name)
         self.assertEqual(data.quantity, inventory.quantity)
         self.assertEqual(data.category, inventory.category)
         self.assertEqual(data.available, inventory.available)
+        self.assertEqual(data.sku, inventory.sku)  # new core field
 
-        # Timestamps should exist and be datetime objects
         self.assertIsNotNone(data.created_at)
         self.assertIsNotNone(data.last_updated)
         self.assertLessEqual(data.created_at, data.last_updated)
@@ -108,6 +103,14 @@ class TestInventory(TestCase):
         self.assertEqual(data["category"], inventory.category)
         self.assertIn("available", data)
         self.assertEqual(data["available"], inventory.available)
+        self.assertIn("sku", data)  # new core field
+        self.assertEqual(data["sku"], inventory.sku)
+        self.assertIn("description", data)
+        self.assertEqual(data["description"], inventory.description)
+        self.assertIn("price", data)
+        self.assertEqual(
+            data["price"], float(inventory.price) if inventory.price else None
+        )
         self.assertIn("created_at", data)
         self.assertEqual(data["created_at"], inventory.created_at)
         self.assertIn("last_updated", data)
@@ -124,32 +127,31 @@ class TestInventory(TestCase):
         self.assertEqual(inventory.quantity, data["quantity"])
         self.assertEqual(inventory.category, data["category"])
         self.assertEqual(inventory.available, data["available"])
-        self.assertEqual(inventory.created_at, data["created_at"])
-        self.assertEqual(inventory.last_updated, data["last_updated"])
+        self.assertEqual(inventory.sku, data["sku"])  # new core field
+        self.assertEqual(inventory.description, data["description"])
+        self.assertEqual(inventory.price, data["price"])
+        # created_at/last_updated are not set via deserialize
 
     def test_update_a_inventory(self):
-        """It should Update a Inventory"""
+        """It should Update an Inventory"""
         inventory = InventoryFactory()
         logging.debug(inventory)
         inventory.id = None
         inventory.create()
         logging.debug(inventory)
         self.assertIsNotNone(inventory.id)
-        # Change it an save it
         inventory.category = "k9"
         original_id = inventory.id
         inventory.update()
         self.assertEqual(inventory.id, original_id)
         self.assertEqual(inventory.category, "k9")
-        # Fetch it back and make sure the id hasn't changed
-        # but the data did change
         inventory = Inventory.all()
         self.assertEqual(len(inventory), 1)
         self.assertEqual(inventory[0].id, original_id)
         self.assertEqual(inventory[0].category, "k9")
 
     def test_update_no_id(self):
-        """It should not Update a Inventory with no id"""
+        """It should not Update an Inventory with no id"""
         inventory = InventoryFactory()
         logging.debug(inventory)
         inventory.id = None

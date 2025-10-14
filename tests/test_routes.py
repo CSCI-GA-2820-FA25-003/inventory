@@ -38,7 +38,7 @@ BASE_URL = "/inventory"
 # pylint: disable=too-many-public-methods
 
 
-class TestYourResourceService(TestCase):
+class TestInventory(TestCase):
     """REST API Server Tests"""
 
     @classmethod
@@ -79,6 +79,7 @@ class TestYourResourceService(TestCase):
     # TEST CREATE
     # ----------------------------------------------------------
     # id, name, quantity, category, available, created_at, and last_updated
+
     def test_create_inventory(self):
         """It should Create a new Inventory"""
         test_inventory = InventoryFactory()
@@ -96,6 +97,7 @@ class TestYourResourceService(TestCase):
         self.assertEqual(new_inventory["category"], test_inventory.category)
         self.assertEqual(new_inventory["available"], test_inventory.available)
         self.assertEqual(new_inventory["quantity"], test_inventory.quantity)
+        self.assertEqual(new_inventory["sku"], test_inventory.sku)  # new core field
 
         # optional checks
         self.assertIn("id", new_inventory)
@@ -108,6 +110,7 @@ class TestYourResourceService(TestCase):
         self.assertIsInstance(new_inventory["last_updated"], str)
         self.assertTrue(len(new_inventory["created_at"]) > 0)
         self.assertTrue(len(new_inventory["last_updated"]) > 0)
+
         # To Do: Uncomment after get_inventory is implemented
         # # Check that the location header was correct
         # response = self.client.get(location)
@@ -125,7 +128,7 @@ class TestYourResourceService(TestCase):
 
     def test_update_inventory(self):
         """It should Update an existing Inventory"""
-        # create a inventory to update
+        # create an inventory to update
         test_inventory = InventoryFactory()
         response = self.client.post(BASE_URL, json=test_inventory.serialize())
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -134,9 +137,11 @@ class TestYourResourceService(TestCase):
         new_inventory = response.get_json()
         logging.debug(new_inventory)
         new_inventory["category"] = "unknown"
+        new_inventory["sku"] = test_inventory.sku  # ensure SKU present
         response = self.client.put(
             f"{BASE_URL}/{new_inventory['id']}", json=new_inventory
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         updated_inventory = response.get_json()
         self.assertEqual(updated_inventory["category"], "unknown")
+        self.assertEqual(updated_inventory["sku"], test_inventory.sku)
