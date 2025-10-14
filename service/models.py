@@ -25,19 +25,29 @@ class Inventory(db.Model):
     ##################################################
     # Table Schema
     ##################################################
+
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(63), nullable=False)
-    quantity = db.Column(db.Integer, nullable=False)
-    category = db.Column(db.String(63), nullable=False)
-    available = db.Column(db.Boolean(), nullable=False, default=False)
-    # gender = db.Column(
-    #     db.Enum(Gender), nullable=False, server_default=(Gender.UNKNOWN.name)
-    # )
-    # birthday = db.Column(db.Date(), nullable=False, default=date.today())
-    # Database auditing fields
-    created_at = db.Column(db.DateTime, default=db.func.now(), nullable=False)
+
+    # core product info
+    name = db.Column(db.String(100), nullable=False)
+    category = db.Column(db.String(50))
+    description = db.Column(db.Text)
+    sku = db.Column(db.String(50), nullable=False, unique=True)
+
+    # inventory & pricing
+    quantity = db.Column(db.Integer, nullable=False, default=0)
+    price = db.Column(db.Numeric(10, 2))
+
+    # availability
+    available = db.Column(db.Boolean, nullable=False, default=True)
+
+    # timestamps
+    created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
     last_updated = db.Column(
-        db.DateTime, default=db.func.now(), onupdate=db.func.now(), nullable=False
+        db.DateTime,
+        nullable=False,
+        server_default=db.func.now(),
+        onupdate=db.func.now(),
     )
 
     def __repr__(self):
@@ -83,12 +93,15 @@ class Inventory(db.Model):
             raise DataValidationError(e) from e
 
     def serialize(self):
-        """Serializes a Inventory into a dictionary"""
+        """Serializes an Inventory into a dictionary"""
         return {
             "id": self.id,
             "name": self.name,
-            "quantity": self.quantity,
             "category": self.category,
+            "description": self.description,
+            "sku": self.sku,
+            "quantity": self.quantity,
+            "price": float(self.price) if self.price else None,
             "available": self.available,
             "created_at": self.created_at,
             "last_updated": self.last_updated,
@@ -103,11 +116,12 @@ class Inventory(db.Model):
         """
         try:
             self.name = data["name"]
+            self.category = data.get("category")
+            self.description = data.get("description")
+            self.sku = data["sku"]
             self.quantity = data["quantity"]
-            self.category = data["category"]
-            self.available = data["available"]
-            self.created_at = data["created_at"]
-            self.last_updated = data["last_updated"]
+            self.price = data.get("price")
+            self.available = data.get("available", True)
         except AttributeError as error:
             raise DataValidationError("Invalid attribute: " + error.args[0]) from error
         except KeyError as error:
@@ -120,6 +134,45 @@ class Inventory(db.Model):
                 + str(error)
             ) from error
         return self
+
+    # def serialize(self):
+    #     """Serializes a Inventory into a dictionary"""
+    #     return {
+    #         "id": self.id,
+    #         "name": self.name,
+    #         "quantity": self.quantity,
+    #         "category": self.category,
+    #         "available": self.available,
+    #         "created_at": self.created_at,
+    #         "last_updated": self.last_updated,
+    #     }
+
+    # def deserialize(self, data):
+    #     """
+    #     Deserializes a Inventory from a dictionary
+
+    #     Args:
+    #         data (dict): A dictionary containing the resource data
+    #     """
+    #     try:
+    #         self.name = data["name"]
+    #         self.quantity = data["quantity"]
+    #         self.category = data["category"]
+    #         self.available = data["available"]
+    #         self.created_at = data["created_at"]
+    #         self.last_updated = data["last_updated"]
+    #     except AttributeError as error:
+    #         raise DataValidationError("Invalid attribute: " + error.args[0]) from error
+    #     except KeyError as error:
+    #         raise DataValidationError(
+    #             "Invalid Inventory: missing " + error.args[0]
+    #         ) from error
+    #     except TypeError as error:
+    #         raise DataValidationError(
+    #             "Invalid Inventory: body of request contained bad or no data "
+    #             + str(error)
+    #         ) from error
+    #     return self
 
     ##################################################
     # CLASS METHODS
