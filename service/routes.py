@@ -152,3 +152,25 @@ def update_inventory(inventory_id):
 
     app.logger.info("Inventory with ID: %d updated.", inventory.id)
     return jsonify(inventory.serialize()), status.HTTP_200_OK
+
+
+######################################################################
+# DELETE AN INVENTORY
+######################################################################
+@app.route("/inventory/<int:inventory_id>", methods=["DELETE"])
+def delete_inventory(inventory_id):
+    """
+    Delete a Inventory
+
+    This endpoint will delete a Inventory based the id specified in the path
+    """
+    app.logger.info("Request to Delete a inventory with id [%s]", inventory_id)
+
+    # Delete the Inventory if it exists
+    inventory = Inventory.find(inventory_id)
+    if inventory:
+        app.logger.info("Inventory with ID: %d found.", inventory.id)
+        inventory.delete()
+
+    app.logger.info("Inventory with ID: %d delete complete.", inventory_id)
+    return {}, status.HTTP_204_NO_CONTENT
