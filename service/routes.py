@@ -68,13 +68,35 @@ def create_inventory():
 
     # Return the location of the new Inventory
     #  To Do : Uncomment when implementing get_inventory
-    # location_url = url_for("get_inventory", inventory_id=inventory.id, _external=True)
-    location_url = "unkown  "
+    location_url = url_for("get_inventory", inventory_id=inventory.id, _external=True)
     return (
         jsonify(inventory.serialize()),
         status.HTTP_201_CREATED,
         {"Location": location_url},
     )
+
+
+######################################################################
+# READ AN INVENTORY
+######################################################################
+@app.route("/inventory/<int:inventory_id>", methods=["GET"])
+def get_inventory(inventory_id):
+    """
+    Retrieve a single Inventory
+    This endpoint will return a Inventory based on it's id
+    """
+    app.logger.info("Request to Retrieve a Inventory with id [%s]", inventory_id)
+
+    # Attempt to find the Pet and abort if not found
+    inventory = Inventory.find(inventory_id)
+    if not inventory:
+        abort(
+            status.HTTP_404_NOT_FOUND,
+            f"Inventory with id '{inventory_id}' was not found.",
+        )
+
+    app.logger.info("Returning inventory: %s", inventory.name)
+    return jsonify(inventory.serialize()), status.HTTP_200_OK
 
 
 ######################################################################
