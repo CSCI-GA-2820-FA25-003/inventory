@@ -88,6 +88,18 @@ class TestInventory(TestCase):
         self.assertIsNotNone(data.last_updated)
         self.assertLessEqual(data.created_at, data.last_updated)
 
+    def test_list_all_inventory(self):
+        """It should List all Pets in the database"""
+        inventory = Inventory.all()
+        self.assertEqual(inventory, [])
+        # Create 5 Inventorys
+        for _ in range(5):
+            inventory1 = InventoryFactory()
+            inventory1.create()
+        # See if we get back 5 inventory
+        inventory = Inventory.all()
+        self.assertEqual(len(inventory), 5)
+
     def test_serialize_an_inventory(self):
         """It should serialize an Inventory"""
         inventory = InventoryFactory()

@@ -33,8 +33,17 @@ from service.common import status  # HTTP Status Codes
 @app.route("/")
 def index():
     """Root URL response"""
+    # return (
+    #     "Reminder: return some useful information in json format about the service here",
+    #     status.HTTP_200_OK,
+    # )
+
     return (
-        "Reminder: return some useful information in json format about the service here",
+        jsonify(
+            name="Inventory Demo REST API Service",
+            version="1.0",
+            paths=url_for("list_inventory", _external=True),
+        ),
         status.HTTP_200_OK,
     )
 
@@ -87,7 +96,7 @@ def get_inventory(inventory_id):
     """
     app.logger.info("Request to Retrieve a Inventory with id [%s]", inventory_id)
 
-    # Attempt to find the Pet and abort if not found
+    # Attempt to find the Inventory and abort if not found
     inventory = Inventory.find(inventory_id)
     if not inventory:
         abort(
@@ -174,3 +183,38 @@ def delete_inventory(inventory_id):
 
     app.logger.info("Inventory with ID: %d delete complete.", inventory_id)
     return {}, status.HTTP_204_NO_CONTENT
+
+
+######################################################################
+# LIST ALL INVENTORY
+######################################################################
+@app.route("/inventory", methods=["GET"])
+def list_inventory():
+    """Returns all of the Inventory"""
+    app.logger.info("Request for pet list")
+
+    inventory = []
+
+    # Parse any arguments from the query string
+    category = request.args.get("category")
+    name = request.args.get("name")
+    available = request.args.get("available")
+
+    if category:
+        app.logger.info("Find by category: %s", category)
+        inventory = Inventory.find_by_category(category)
+    elif name:
+        app.logger.info("Find by name: %s", name)
+        inventory = Inventory.find_by_name(name)
+    elif available:
+        app.logger.info("Find by available: %s", available)
+        # create bool from string
+        available_value = available.lower() in ["true", "yes", "1"]
+        inventory = Inventory.find_by_availability(available_value)
+    else:
+        app.logger.info("Find all")
+        inventory = Inventory.all()
+
+    results = [pet.serialize() for pet in inventory]
+    app.logger.info("Returning %d inventory", len(results))
+    return jsonify(results), status.HTTP_200_OK

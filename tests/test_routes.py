@@ -26,6 +26,7 @@ from wsgi import app
 from service.common import status
 from service.models import db, Inventory
 from .factories import InventoryFactory
+from urllib.parse import quote_plus
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
@@ -67,7 +68,7 @@ class TestInventory(TestCase):
         db.session.remove()
 
     ############################################################
-    # Utility function to bulk create pets
+    # Utility function to bulk create inventorys
     ############################################################
     def _create_inventory(self, count: int = 1) -> list:
         """Factory method to create inventory in bulk"""
@@ -214,3 +215,87 @@ class TestInventory(TestCase):
         response = self.client.delete(f"{BASE_URL}/0")
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(len(response.data), 0)
+
+    # ----------------------------------------------------------
+    # TEST LIST
+    # ----------------------------------------------------------
+    def test_get_inventory_list(self):
+        """It should Get a list of Inventory"""
+        self._create_inventory(5)
+        response = self.client.get(BASE_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(len(data), 5)
+
+    # ----------------------------------------------------------
+    # TEST QUERY
+    # ----------------------------------------------------------
+    def test_query_by_name(self):
+        """It should Query Pets by name"""
+        inventory = self._create_inventory(5)
+        test_name = inventory[0].name
+        name_count = len(
+            [inventory1 for inventory1 in inventory if inventory1.name == test_name]
+        )
+        response = self.client.get(
+            BASE_URL, query_string=f"name={quote_plus(test_name)}"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(len(data), name_count)
+        # check the data just to be sure
+        for inventory1 in data:
+            self.assertEqual(inventory1["name"], test_name)
+
+    def test_query_inventory1_list_by_category(self):
+        """It should Query Pets by Category"""
+        inventory = self._create_inventory(10)
+        test_category = inventory[0].category
+        category_inventory = [
+            inventory1
+            for inventory1 in inventory
+            if inventory1.category == test_category
+        ]
+        response = self.client.get(
+            BASE_URL, query_string=f"category={quote_plus(test_category)}"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(len(data), len(category_inventory))
+        # check the data just to be sure
+        for inventory1 in data:
+            self.assertEqual(inventory1["category"], test_category)
+
+    def test_query_by_availability(self):
+        """It should Query Pets by availability"""
+        inventory = self._create_inventory(10)
+        available_inventory = [
+            inventory1 for inventory1 in inventory if inventory1.available is True
+        ]
+        unavailable_inventory = [
+            inventory1 for inventory1 in inventory if inventory1.available is False
+        ]
+        available_count = len(available_inventory)
+        unavailable_count = len(unavailable_inventory)
+        logging.debug("Available Pets [%d] %s", available_count, available_inventory)
+        logging.debug(
+            "Unavailable Pets [%d] %s", unavailable_count, unavailable_inventory
+        )
+
+        # test for available
+        response = self.client.get(BASE_URL, query_string="available=true")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(len(data), available_count)
+        # check the data just to be sure
+        for inventory1 in data:
+            self.assertEqual(inventory1["available"], True)
+
+        # test for unavailable
+        response = self.client.get(BASE_URL, query_string="available=false")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(len(data), unavailable_count)
+        # check the data just to be sure
+        for inventory1 in data:
+            self.assertEqual(inventory1["available"], False)

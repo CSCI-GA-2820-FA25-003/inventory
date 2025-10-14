@@ -69,7 +69,7 @@ class Inventory(db.Model):
 
     def update(self) -> None:
         """
-        Updates a Pet to the database
+        Updates a Inventory to the database
         """
         logger.info("Saving %s", self.name)
         if not self.id:
@@ -135,67 +135,70 @@ class Inventory(db.Model):
             ) from error
         return self
 
-    # def serialize(self):
-    #     """Serializes a Inventory into a dictionary"""
-    #     return {
-    #         "id": self.id,
-    #         "name": self.name,
-    #         "quantity": self.quantity,
-    #         "category": self.category,
-    #         "available": self.available,
-    #         "created_at": self.created_at,
-    #         "last_updated": self.last_updated,
-    #     }
-
-    # def deserialize(self, data):
-    #     """
-    #     Deserializes a Inventory from a dictionary
-
-    #     Args:
-    #         data (dict): A dictionary containing the resource data
-    #     """
-    #     try:
-    #         self.name = data["name"]
-    #         self.quantity = data["quantity"]
-    #         self.category = data["category"]
-    #         self.available = data["available"]
-    #         self.created_at = data["created_at"]
-    #         self.last_updated = data["last_updated"]
-    #     except AttributeError as error:
-    #         raise DataValidationError("Invalid attribute: " + error.args[0]) from error
-    #     except KeyError as error:
-    #         raise DataValidationError(
-    #             "Invalid Inventory: missing " + error.args[0]
-    #         ) from error
-    #     except TypeError as error:
-    #         raise DataValidationError(
-    #             "Invalid Inventory: body of request contained bad or no data "
-    #             + str(error)
-    #         ) from error
-    #     return self
-
     ##################################################
     # CLASS METHODS
     ##################################################
 
     @classmethod
-    def all(cls):
-        """Returns all of the Inventorys in the database"""
-        logger.info("Processing all Inventorys")
+    def all(cls) -> list:
+        """Returns all of the Inventory in the database"""
+        logger.info("Processing all Inventory")
         return cls.query.all()
 
     @classmethod
-    def find(cls, by_id):
-        """Finds a Inventory by it's ID"""
-        logger.info("Processing lookup for id %s ...", by_id)
-        return cls.query.session.get(cls, by_id)
+    def find(cls, inventory_id: int):
+        """Finds a Inventory by it's ID
+
+        :param inventory_id: the id of the Inventory to find
+        :type inventory_id: int
+
+        :return: an instance with the inventory_id, or None if not found
+        :rtype: Inventory
+
+        """
+        logger.info("Processing lookup for id %s ...", inventory_id)
+        return cls.query.session.get(cls, inventory_id)
 
     @classmethod
-    def find_by_name(cls, name):
-        """Returns all Inventorys with the given name
+    def find_by_name(cls, name: str) -> list:
+        """Returns all Inventory with the given name
 
-        Args:
-            name (string): the name of the Inventorys you want to match
+        :param name: the name of the Inventory you want to match
+        :type name: str
+
+        :return: a collection of Inventory with that name
+        :rtype: list
+
         """
         logger.info("Processing name query for %s ...", name)
         return cls.query.filter(cls.name == name)
+
+    @classmethod
+    def find_by_category(cls, category: str) -> list:
+        """Returns all of the Inventory in a category
+
+        :param category: the category of the Inventory you want to match
+        :type category: str
+
+        :return: a collection of Inventory in that category
+        :rtype: list
+
+        """
+        logger.info("Processing category query for %s ...", category)
+        return cls.query.filter(cls.category == category)
+
+    @classmethod
+    def find_by_availability(cls, available: bool = True) -> list:
+        """Returns all Inventory by their availability
+
+        :param available: True for inventorys that are available
+        :type available: str
+
+        :return: a collection of Inventory that are available
+        :rtype: list
+
+        """
+        if not isinstance(available, bool):
+            raise TypeError("Invalid availability, must be of type boolean")
+        logger.info("Processing available query for %s ...", available)
+        return cls.query.filter(cls.available == available)
