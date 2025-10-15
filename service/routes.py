@@ -131,7 +131,7 @@ def check_content_type(content_type) -> None:
 
 
 ######################################################################
-# UPDATE AN EXISTING PET
+# UPDATE AN EXISTING INVENTORY
 ######################################################################
 @app.route("/inventory/<int:inventory_id>", methods=["PUT"])
 def update_inventory(inventory_id):
@@ -191,7 +191,7 @@ def delete_inventory(inventory_id):
 @app.route("/inventory", methods=["GET"])
 def list_inventory():
     """Returns all of the Inventory"""
-    app.logger.info("Request for pet list")
+    app.logger.info("Request for item list")
 
     inventory = []
 
@@ -215,6 +215,6 @@ def list_inventory():
         app.logger.info("Find all")
         inventory = Inventory.all()
 
-    results = [pet.serialize() for pet in inventory]
+    results = [item.serialize() for item in inventory]
     app.logger.info("Returning %d inventory", len(results))
     return jsonify(results), status.HTTP_200_OK
