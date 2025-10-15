@@ -231,3 +231,25 @@ class TestInventory(TestCase):
         """It should raise TypeError when availability is not boolean"""
         with self.assertRaises(TypeError):
             Inventory.find_by_availability("yes")
+
+    def test_read_a_inventory(self):
+        """It should Read an Inventory"""
+        inventory = InventoryFactory()
+        logging.debug(inventory)
+        inventory.id = None
+        inventory.create()
+        self.assertIsNotNone(inventory.id)
+        # Fetch it back
+        found_inventory = Inventory.find(inventory.id)
+        self.assertEqual(found_inventory.id, inventory.id)
+        self.assertEqual(found_inventory.name, inventory.name)
+        self.assertEqual(found_inventory.category, inventory.category)
+
+    def test_delete_a_inventory(self):
+        """It should Delete a Inventory"""
+        inventory = InventoryFactory()
+        inventory.create()
+        self.assertEqual(len(Inventory.all()), 1)
+        # delete the inventory and make sure it isn't in the database
+        inventory.delete()
+        self.assertEqual(len(Inventory.all()), 0)
