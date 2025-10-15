@@ -1,32 +1,127 @@
-# NYU DevOps Project Template
+# Inventory Services
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python](https://img.shields.io/badge/Language-Python-blue.svg)](https://python.org/)
 
-This is a skeleton you can use to start your projects.
-
-**Note:** _Feel free to overwrite this `README.md` file with the one that describes your project._
-
 ## Overview
 
-This project template contains starter code for your class project. The `/service` folder contains your `models.py` file for your model and a `routes.py` file for your service. The `/tests` folder has test case starter code for testing the model and the service separately. All you need to do is add your functionality. You can use the [lab-flask-tdd](https://github.com/nyu-devops/lab-flask-tdd) for code examples to copy from.
+This project is designed to monitor the inventory, which stores information such as name, category, quantity, price, description, and sku. The project can check the inventory is available or not as well. For users, the project supports operations such as create, read, update, list, and delete an inventory.
 
-## Automatic Setup
+## Setup
 
-The best way to use this repo is to start your own repo using it as a git template. To do this just press the green **Use this template** button in GitHub and this will become the source for your repository.
+Clone the code using the web URL via git bash:
+```
+https://github.com/CSCI-GA-2820-FA25-003/inventory.git
+```
+or SSH key:
+```
+git@github.com:CSCI-GA-2820-FA25-003/inventory.git
+```
+## To Use REST API Client
 
-## Manual Setup
+Use the URL:
+```
+http://localhost:8080/inventory
+```
 
-You can also clone this repository and then copy and paste the starter code into your project repo folder on your local computer. Be careful not to copy over your own `README.md` file so be selective in what you copy.
+## To Edit an Inventory
 
-There are 4 hidden files that you will need to copy manually if you use the Mac Finder or Windows Explorer to copy files from this folder into your repo folder.
+The REST API Client has GET(read/list the inventory), POST(create), PUT(update), and DELETE functions.
 
-These should be copied using a bash shell as follows:
+### 1. Create an Inventory
 
-```bash
-    cp .gitignore  ../<your_repo_folder>/
-    cp .flaskenv ../<your_repo_folder>/
-    cp .gitattributes ../<your_repo_folder>/
+Select POST function and make sure you have the inventory's name, category, available, quantity, price, description and sku. Using JSON and send the information.
+
+e.g.:
+```
+{
+  "name": "Nike Air jordan",
+  "category": "Shoes",
+  "available": true,
+  "quantity": 10,
+  "price": 200.99,
+  "description": "Lightweight running shoes with.",
+  "sku": "1210"
+}
+```
+
+### 2. Read/List an Inventory
+
+Select GET function and put the "id" behind the URL, then you can get the inventory's information.
+
+```
+http://localhost:8080/inventory/id
+```
+e.g.:
+```
+http://localhost:8080/inventory/75
+
+and we get:
+{
+  "available": true,
+  "category": "Shoes",
+  "created_at": "Wed, 15 Oct 2025 16:48:44 GMT",
+  "description": "Lightweight running shoes with.",
+  "id": 75,
+  "last_updated": "Wed, 15 Oct 2025 16:48:44 GMT",
+  "name": "Nike Air jordan",
+  "price": 200.99,
+  "quantity": 10,
+  "sku": "1210"
+}
+```
+
+### 3. Update an Inventory
+
+Select PUT function and update the information of the inventory, also need "id".
+
+e.g.:
+```
+http://localhost:8080/inventory/75
+
+{
+  "name": "Nike Air jordan",
+  "category": "Shoes",
+  "available": true,
+  "quantity": 20,              # update the quantity from 10 to 20
+  "price": 200.99,
+  "description": "Lightweight running shoes with.",
+  "sku": "1210"
+}
+
+and we get:
+{
+  "available": true,
+  "category": "Shoes",
+  "created_at": "Wed, 15 Oct 2025 16:48:44 GMT",
+  "description": "Lightweight running shoes with.",
+  "id": 75,
+  "last_updated": "Wed, 15 Oct 2025 17:48:13 GMT",
+  "name": "Nike Air jordan",
+  "price": 200.99,
+  "quantity": 20,             # notice that the quantity has been updated
+  "sku": "1210"
+}
+```
+warning: sku number is unique, can not change one inventory's sku number to an already existed another inventory's sku number, that will be an error.
+
+
+### 4. Delete an Inventory
+
+Select DELETE function and delete the inventory of no need, also need "id".
+
+e.g.:
+```
+http://localhost:8080/inventory/75
+
+then the inventory "75" has been deleted.
+
+when we GET "75" again, we will get:
+{
+  "error": "Not Found",
+  "message": "404 Not Found: Inventory with id '75' was not found.",
+  "status": 404
+}
 ```
 
 ## Contents
