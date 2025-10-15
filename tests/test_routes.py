@@ -27,6 +27,7 @@ from service.common import status
 from service.models import db, Inventory
 from .factories import InventoryFactory
 from urllib.parse import quote_plus
+from service.routes import check_content_type
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
@@ -299,3 +300,34 @@ class TestInventory(TestCase):
         # check the data just to be sure
         for inventory1 in data:
             self.assertEqual(inventory1["available"], False)
+
+    def test_check_content_type_invalid_and_missing(self):
+        """It should abort if Content-Type is missing or invalid"""
+
+        # Missing Content-Type
+        with app.test_request_context("/", headers={}):
+            with self.assertRaises(Exception) as context:
+                check_content_type("application/json")
+            self.assertIn(
+                str(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE), str(context.exception)
+            )
+
+        # Invalid Content-Type
+        with app.test_request_context("/", headers={"Content-Type": "text/plain"}):
+            with self.assertRaises(Exception) as context:
+                check_content_type("application/json")
+            self.assertIn(
+                str(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE), str(context.exception)
+            )
+
+    def test_update_inventory_not_found(self):
+        """It should return 404 if inventory is not found"""
+        from service.common import status
+
+        with app.test_client() as client:
+            response = client.put(
+                "/inventory/999",
+                json={"name": "Test", "sku": "XYZ123", "quantity": 10},
+                headers={"Content-Type": "application/json"},
+            )
+            self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
