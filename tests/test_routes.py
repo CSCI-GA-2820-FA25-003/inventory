@@ -137,7 +137,6 @@ class TestInventory(TestCase):
         self.assertTrue(len(new_inventory["created_at"]) > 0)
         self.assertTrue(len(new_inventory["last_updated"]) > 0)
 
-        # To Do: Uncomment after get_inventory is implemented
         # Check that the location header was correct
         response = self.client.get(location)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -324,7 +323,6 @@ class TestInventory(TestCase):
 
     def test_update_inventory_not_found(self):
         """It should return 404 if inventory is not found"""
-        from service.common import status
 
         with app.test_client() as client:
             response = client.put(
