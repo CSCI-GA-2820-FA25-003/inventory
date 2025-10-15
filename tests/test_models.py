@@ -90,7 +90,7 @@ class TestInventory(TestCase):
         self.assertLessEqual(data.created_at, data.last_updated)
 
     def test_list_all_inventory(self):
-        """It should List all Pets in the database"""
+        """It should List all Inventory in the database"""
         inventory = Inventory.all()
         self.assertEqual(inventory, [])
         # Create 5 Inventorys

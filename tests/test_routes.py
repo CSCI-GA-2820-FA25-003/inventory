@@ -232,7 +232,7 @@ class TestInventory(TestCase):
     # TEST QUERY
     # ----------------------------------------------------------
     def test_query_by_name(self):
-        """It should Query Pets by name"""
+        """It should Query Inventory by name"""
         inventory = self._create_inventory(5)
         test_name = inventory[0].name
         name_count = len(
@@ -249,7 +249,7 @@ class TestInventory(TestCase):
             self.assertEqual(inventory1["name"], test_name)
 
     def test_query_inventory1_list_by_category(self):
-        """It should Query Pets by Category"""
+        """It should Query Inventory by Category"""
         inventory = self._create_inventory(10)
         test_category = inventory[0].category
         category_inventory = [
@@ -268,7 +268,7 @@ class TestInventory(TestCase):
             self.assertEqual(inventory1["category"], test_category)
 
     def test_query_by_availability(self):
-        """It should Query Pets by availability"""
+        """It should Query Inventory by availability"""
         inventory = self._create_inventory(10)
         available_inventory = [
             inventory1 for inventory1 in inventory if inventory1.available is True
@@ -278,9 +278,11 @@ class TestInventory(TestCase):
         ]
         available_count = len(available_inventory)
         unavailable_count = len(unavailable_inventory)
-        logging.debug("Available Pets [%d] %s", available_count, available_inventory)
         logging.debug(
-            "Unavailable Pets [%d] %s", unavailable_count, unavailable_inventory
+            "Available Inventory [%d] %s", available_count, available_inventory
+        )
+        logging.debug(
+            "Unavailable Inventory [%d] %s", unavailable_count, unavailable_inventory
         )
 
         # test for available
