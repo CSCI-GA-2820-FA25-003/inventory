@@ -25,6 +25,7 @@ from unittest import TestCase
 from wsgi import app
 from service.models import Inventory, DataValidationError, db
 from .factories import InventoryFactory
+from unittest.mock import patch
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
@@ -168,3 +169,65 @@ class TestInventory(TestCase):
         logging.debug(inventory)
         inventory.id = None
         self.assertRaises(DataValidationError, inventory.update)
+
+    def test_repr(self):
+        """It should return a string representation of the inventory"""
+        inventory = InventoryFactory()
+        expected = f"<Inventory {inventory.name} id=[{inventory.id}]>"
+        self.assertEqual(repr(inventory), expected)
+
+    def test_create_inventory_with_error(self):
+        """It should raise DataValidationError when create() fails"""
+        inventory1 = InventoryFactory(sku="DUPLICATE")
+        inventory1.create()
+        inventory2 = InventoryFactory(sku="DUPLICATE")  # violates unique constraint
+        with self.assertRaises(DataValidationError):
+            inventory2.create()
+
+    def test_update_inventory_with_error(self):
+        """It should raise DataValidationError when update() fails"""
+        inventory = InventoryFactory()
+        inventory.create()
+        with patch(
+            "service.models.db.session.commit", side_effect=Exception("DB error")
+        ):
+            with self.assertRaises(DataValidationError):
+                inventory.update()
+
+    def test_delete_inventory_with_error(self):
+        """It should raise DataValidationError when delete() fails"""
+        inventory = InventoryFactory()
+        inventory.create()
+        with patch.object(db.session, "delete", side_effect=Exception("DB error")):
+            with self.assertRaises(DataValidationError):
+                inventory.delete()
+
+    def test_deserialize_with_exceptions(self):
+        """Cover KeyError, AttributeError, and TypeError branches in deserialize()"""
+        inventory = Inventory()
+
+        # KeyError: missing required keys (e.g., sku, quantity)
+        with self.assertRaises(DataValidationError):
+            inventory.deserialize({"name": "item"})
+
+        # AttributeError: object supports indexing (data["name"]) but has no .get()
+        class NoGet:
+            def __init__(self, d):
+                self._d = d
+
+            def __getitem__(self, key):
+                return self._d[key]
+
+        bad_mapping = NoGet({"name": "n", "sku": "s", "quantity": 1})
+        with self.assertRaises(DataValidationError) as cm:
+            inventory.deserialize(bad_mapping)
+        self.assertIn("Invalid attribute", str(cm.exception))
+
+        # TypeError: completely invalid type (e.g., None)
+        with self.assertRaises(DataValidationError):
+            inventory.deserialize(None)
+
+    def test_find_by_availability_with_invalid_type(self):
+        """It should raise TypeError when availability is not boolean"""
+        with self.assertRaises(TypeError):
+            Inventory.find_by_availability("yes")
