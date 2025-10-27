@@ -218,3 +218,33 @@ def list_inventory():
     results = [item.serialize() for item in inventory]
     app.logger.info("Returning %d inventory", len(results))
     return jsonify(results), status.HTTP_200_OK
+
+
+######################################################################
+# PURCHASE A Inventory
+######################################################################
+@app.route("/inventory/<int:pet_id>/purchase", methods=["PUT"])
+def purchase_pets(pet_id):
+    """Purchasing a Inventory makes it unavailable"""
+    app.logger.info("Request to purchase inventory with id: %d", pet_id)
+
+    # Attempt to find the Inventory and abort if not found
+    inventory = Inventory.find(pet_id)
+    if not inventory:
+        abort(status.HTTP_404_NOT_FOUND, f"Inventory with id '{pet_id}' was not found.")
+
+    # you can only purchase inventory that are available
+    if not inventory.available:
+        abort(
+            status.HTTP_409_CONFLICT,
+            f"Inventory with id '{pet_id}' is not available.",
+        )
+
+    # At this point you would execute code to purchase the inventory
+    # For the moment, we will just set them to unavailable
+
+    inventory.available = False
+    inventory.update()
+
+    app.logger.info("Inventory with ID: %d has been purchased.", pet_id)
+    return inventory.serialize(), status.HTTP_200_OK

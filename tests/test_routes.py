@@ -331,3 +331,36 @@ class TestInventory(TestCase):
                 headers={"Content-Type": "application/json"},
             )
             self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    # ----------------------------------------------------------
+    # TEST ACTIONS
+    # ----------------------------------------------------------
+    def test_purchase_a_inventory(self):
+        """It should Purchase a Inventory"""
+        # Create a inventory that is available for purchase
+        inventory = InventoryFactory()
+        inventory.available = True
+        response = self.client.post(BASE_URL, json=inventory.serialize())
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        data = response.get_json()
+        inventory.id = data["id"]
+        self.assertEqual(data["available"], True)
+
+        # Call purchase on the created id and check the results
+        response = self.client.put(f"{BASE_URL}/{inventory.id}/purchase")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(f"{BASE_URL}/{inventory.id}")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        logging.debug("Response data: %s", data)
+        self.assertEqual(data["available"], False)
+
+    def test_purchase_not_available(self):
+        """It should not Purchase a Inventory that is not available"""
+        inventory = self._create_inventory(10)
+        unavailable_inventory = [
+            inventory for inventory in inventory if inventory.available is False
+        ]
+        inventory = unavailable_inventory[0]
+        response = self.client.put(f"{BASE_URL}/{inventory.id}/purchase")
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
