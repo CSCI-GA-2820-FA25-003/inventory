@@ -93,7 +93,7 @@ class TestInventory(TestCase):
         """It should List all Inventory in the database"""
         inventory = Inventory.all()
         self.assertEqual(inventory, [])
-        # Create 5 Inventorys
+        # Create 5 Inventory
         for _ in range(5):
             inventory1 = InventoryFactory()
             inventory1.create()
@@ -253,3 +253,67 @@ class TestInventory(TestCase):
         # delete the inventory and make sure it isn't in the database
         inventory.delete()
         self.assertEqual(len(Inventory.all()), 0)
+
+
+######################################################################
+#  Q U E R Y   T E S T   C A S E S
+######################################################################
+class TestModelQueries(TestInventory):
+    """Inventory Model Query Tests"""
+
+    def test_find_inventory(self):
+        """It should Find a Inventory by ID"""
+        inventory = InventoryFactory.create_batch(5)
+        for inventory in inventory:
+            inventory.create()
+        logging.debug(inventory)
+        # make sure they got saved
+        self.assertEqual(len(Inventory.all()), 5)
+        # find the 2nd inventory in the list
+        inventory = Inventory.find(inventory[1].id)
+        self.assertIsNot(inventory, None)
+        self.assertEqual(inventory.id, inventory[1].id)
+        self.assertEqual(inventory.name, inventory[1].name)
+        self.assertEqual(inventory.available, inventory[1].available)
+        self.assertEqual(inventory.gender, inventory[1].gender)
+        self.assertEqual(inventory.birthday, inventory[1].birthday)
+
+    def test_find_by_category(self):
+        """It should Find Inventory by Category"""
+        inventory = InventoryFactory.create_batch(10)
+        for inventory in inventory:
+            inventory.create()
+        category = inventory[0].category
+        count = len(
+            [inventory for inventory in inventory if inventory.category == category]
+        )
+        found = Inventory.find_by_category(category)
+        self.assertEqual(found.count(), count)
+        for inventory in found:
+            self.assertEqual(inventory.category, category)
+
+    def test_find_by_name(self):
+        """It should Find a Inventory by Name"""
+        inventory = InventoryFactory.create_batch(10)
+        for inventory in inventory:
+            inventory.create()
+        name = inventory[0].name
+        count = len([inventory for inventory in inventory if inventory.name == name])
+        found = Inventory.find_by_name(name)
+        self.assertEqual(found.count(), count)
+        for inventory in found:
+            self.assertEqual(inventory.name, name)
+
+    def test_find_by_availability(self):
+        """It should Find Inventory by Availability"""
+        inventory = InventoryFactory.create_batch(10)
+        for inventory in inventory:
+            inventory.create()
+        available = inventory[0].available
+        count = len(
+            [inventory for inventory in inventory if inventory.available == available]
+        )
+        found = Inventory.find_by_availability(available)
+        self.assertEqual(found.count(), count)
+        for inventory in found:
+            self.assertEqual(inventory.available, available)
