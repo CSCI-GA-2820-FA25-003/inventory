@@ -263,29 +263,27 @@ class TestModelQueries(TestInventory):
 
     def test_find_inventory(self):
         """It should Find a Inventory by ID"""
-        inventory = InventoryFactory.create_batch(5)
-        for inventory in inventory:
+        inventorys = InventoryFactory.create_batch(5)
+        for inventory in inventorys:
             inventory.create()
-        logging.debug(inventory)
+        logging.debug(inventorys)
         # make sure they got saved
         self.assertEqual(len(Inventory.all()), 5)
         # find the 2nd inventory in the list
-        inventory = Inventory.find(inventory[1].id)
+        inventory = Inventory.find(inventorys[1].id)
         self.assertIsNot(inventory, None)
-        self.assertEqual(inventory.id, inventory[1].id)
-        self.assertEqual(inventory.name, inventory[1].name)
-        self.assertEqual(inventory.available, inventory[1].available)
-        self.assertEqual(inventory.gender, inventory[1].gender)
-        self.assertEqual(inventory.birthday, inventory[1].birthday)
+        self.assertEqual(inventory.id, inventorys[1].id)
+        self.assertEqual(inventory.name, inventorys[1].name)
+        self.assertEqual(inventory.available, inventorys[1].available)
 
     def test_find_by_category(self):
         """It should Find Inventory by Category"""
-        inventory = InventoryFactory.create_batch(10)
-        for inventory in inventory:
+        inventorys = InventoryFactory.create_batch(10)
+        for inventory in inventorys:
             inventory.create()
-        category = inventory[0].category
+        category = inventorys[0].category
         count = len(
-            [inventory for inventory in inventory if inventory.category == category]
+            [inventory for inventory in inventorys if inventory.category == category]
         )
         found = Inventory.find_by_category(category)
         self.assertEqual(found.count(), count)
@@ -294,11 +292,11 @@ class TestModelQueries(TestInventory):
 
     def test_find_by_name(self):
         """It should Find a Inventory by Name"""
-        inventory = InventoryFactory.create_batch(10)
-        for inventory in inventory:
+        inventorys = InventoryFactory.create_batch(10)
+        for inventory in inventorys:
             inventory.create()
-        name = inventory[0].name
-        count = len([inventory for inventory in inventory if inventory.name == name])
+        name = inventorys[0].name
+        count = len([inventory for inventory in inventorys if inventory.name == name])
         found = Inventory.find_by_name(name)
         self.assertEqual(found.count(), count)
         for inventory in found:
@@ -306,12 +304,12 @@ class TestModelQueries(TestInventory):
 
     def test_find_by_availability(self):
         """It should Find Inventory by Availability"""
-        inventory = InventoryFactory.create_batch(10)
-        for inventory in inventory:
+        inventorys = InventoryFactory.create_batch(10)
+        for inventory in inventorys:
             inventory.create()
-        available = inventory[0].available
+        available = inventorys[0].available
         count = len(
-            [inventory for inventory in inventory if inventory.available == available]
+            [inventory for inventory in inventorys if inventory.available == available]
         )
         found = Inventory.find_by_availability(available)
         self.assertEqual(found.count(), count)
