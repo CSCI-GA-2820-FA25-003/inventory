@@ -248,3 +248,12 @@ def purchase_pets(pet_id):
 
     app.logger.info("Inventory with ID: %d has been purchased.", pet_id)
     return inventory.serialize(), status.HTTP_200_OK
+
+
+######################################################################
+# Kubernetes probes health endpoint
+######################################################################
+@app.route("/health", methods=["GET"])
+def health():
+    """Kubernetes probes health endpoint"""
+    return {"status": "OK"}, 200

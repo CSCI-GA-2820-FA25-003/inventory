@@ -157,6 +157,90 @@ tests/                     - test cases package
 └── test_routes.py         - test suite for service routes
 ```
 
+## Create Kubernetes manifests for the Inventory service
+
+### Health Check
+Verify the service is running:
+```
+GET /health
+```
+Example:
+```bash
+curl -i http://localhost:8080/health
+```
+
+### Run with Docker (Local)
+```bash
+# Build application image
+docker build -t inventory:dev .
+
+# Run with SQLite (no external DB)
+docker run --rm -p 8080:8080 \
+  -e DATABASE_URI="sqlite:///tmp/dev.db" \
+  inventory:dev
+
+# Verify
+curl -i http://localhost:8080/health
+```
+
+### Deploy to Kubernetes (k3d)
+Prereqs: `k3d`, `kubectl`
+
+```bash
+# 1) Create cluster (LB exposed on host :8080)
+k3d cluster create k3s-default -p "8080:80@loadbalancer" --agents 1
+
+# 2) Build & load image into the cluster
+docker build -t inventory:dev .
+k3d image import inventory:dev -c k3s-default
+
+# 3) Apply manifests (uses the Makefile helper you added)
+IMAGE=inventory:dev make k8s-apply
+
+# 4) Verify via Ingress
+curl -i http://inventory.127.0.0.1.nip.io:8080/health
+# or (explicit Host header)
+curl -i -H "Host: inventory.127.0.0.1.nip.io" http://127.0.0.1:8080/health
+```
+
+### PostgreSQL on Kubernetes (Optional)
+```bash
+kubectl apply -f k8s/postgres/secret.yaml
+kubectl apply -f k8s/postgres/service.yaml
+kubectl apply -f k8s/postgres/statefulset.yaml
+kubectl rollout status statefulset/postgres
+kubectl rollout restart deploy/inventory-deploy
+kubectl rollout status  deploy/inventory-deploy
+```
+Initialize tables if needed:
+```bash
+kubectl exec -it deploy/inventory-deploy -- bash -lc 'python - <<PY
+from wsgi import app
+from models import db
+with app.app_context():
+    db.create_all()
+print("Tables created")
+PY'
+```
+
+### Troubleshooting
+- Ingress 404:
+  ```bash
+  curl -i -H "Host: inventory.127.0.0.1.nip.io" http://127.0.0.1:8080/health
+  ```
+- Check logs:
+  ```bash
+  kubectl logs deploy/inventory-deploy --tail=100
+  ```
+- List routes inside the pod:
+  ```bash
+  POD=$(kubectl get pod -l app=inventory -o jsonpath='{.items[0].metadata.name}')
+  kubectl exec -it "$POD" -- python - <<'PY'
+
+  ```
+
+
+
 ## License
 
 Copyright (c) 2016, 2025 [John Rofrano](https://www.linkedin.com/in/JohnRofrano/). All rights reserved.

@@ -101,3 +101,33 @@ remove:	## Stop and remove the buildx builder
 	$(info Stopping and removing the builder image...)
 	docker buildx stop
 	docker buildx rm
+
+
+
+############################################################
+# Kubernetes quick helpers
+############################################################
+.PHONY: k8s-apply k8s-test k8s-delete
+
+# Apply k8s manifests 
+k8s-apply:
+	@test -n "$(IMAGE)" || (echo "Set IMAGE=<registry>/<name>:<tag>  e.g. IMAGE=inventory:dev" && exit 1)
+	@if command -v envsubst >/dev/null 2>&1; then \
+		IMAGE=$(IMAGE) envsubst < k8s/deployment.yaml | kubectl apply -f - ; \
+	else \
+		sed "s|\\$${IMAGE}|$(IMAGE)|g" k8s/deployment.yaml | kubectl apply -f - ; \
+	fi
+	kubectl apply -f k8s/service.yaml
+	kubectl apply -f k8s/ingress.yaml
+	kubectl rollout status deploy/inventory-deploy
+
+# Smoke test via Ingress (k3d LB on :8080)
+k8s-test:
+	curl -sSf http://inventory.127.0.0.1.nip.io:8080/health
+
+# Delete resources created by k8s-apply
+k8s-delete:
+	- kubectl delete -f k8s/ingress.yaml
+	- kubectl delete -f k8s/service.yaml
+	- kubectl delete deploy/inventory-deploy
+	- kubectl delete secret/inventory-secret configmap/inventory-config
