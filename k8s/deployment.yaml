@@ -1,0 +1,63 @@
+# App config
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inventory-config
+data:
+  APP_NAME: "inventory-service"
+  PORT: "8080"
+  FLASK_APP: "wsgi:app"
+  FLASK_DEBUG: "False"
+  GUNICORN_BIND: "0.0.0.0:8080"
+---
+# Secrets
+apiVersion: v1
+kind: Secret
+metadata:
+  name: inventory-secret
+type: Opaque
+stringData:
+  DATABASE_URI: "postgresql+psycopg://postgres:pgs3cr3t@postgres:5432/postgres"
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: inventory }
+  template:
+    metadata:
+      labels: { app: inventory }
+    spec:
+      containers:
+        - name: inventory
+          image: "${IMAGE}"                 # set by envsubst/sed when apply
+          imagePullPolicy: IfNotPresent
+          command: ["gunicorn"]
+          args: ["-b","0.0.0.0:8080","wsgi:app"]
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef: { name: inventory-config }
+            - secretRef:    { name: inventory-secret }
+          env:
+            - name: GUNICORN_CMD_ARGS
+              value: "--timeout 120 --graceful-timeout 30 --workers 2 --access-logfile -"
+          readinessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 4
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits:   { cpu: "500m", memory: "512Mi" }

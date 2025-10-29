@@ -1,0 +1,12 @@
+# Internal stable address for pods
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-svc
+spec:
+  type: ClusterIP
+  selector: { app: inventory }
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
