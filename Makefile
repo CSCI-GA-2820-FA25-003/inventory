@@ -131,3 +131,12 @@ k8s-delete:
 	- kubectl delete -f k8s/service.yaml
 	- kubectl delete deploy/inventory-deploy
 	- kubectl delete secret/inventory-secret configmap/inventory-config
+
+
+# BDD
+bdd:
+	BASE_URL=http://127.0.0.1:8000 HEADLESS=true behave -f progress2
+
+bdd-local:
+	BASE_URL=http://localhost:8000 HEADLESS=false behave -f progress2
+

@@ -25,6 +25,7 @@ from flask import jsonify, request, url_for, abort
 from flask import current_app as app  # Import Flask application
 from service.models import Inventory
 from service.common import status  # HTTP Status Codes
+from flask import render_template
 
 
 ######################################################################
@@ -257,3 +258,82 @@ def purchase_pets(pet_id):
 def health():
     """Kubernetes probes health endpoint"""
     return {"status": "OK"}, 200
+
+
+######################################################################
+# BDD/UI additions
+######################################################################
+@app.route("/inventories", methods=["POST"])
+def create_inventory_v2():
+    """Create an inventory item. Requires JSON with name, sku, quantity."""
+    # Enforce JSON Content-Type
+    check_content_type("application/json")
+    data = request.get_json() or {}
+
+    # Validate required fields and constraints
+    errors = []
+    name = data.get("name")
+    if not name:
+        errors.append("name is required")
+
+    sku = data.get("sku")
+    if not sku:
+        errors.append("sku is required")
+
+    qty = data.get("quantity")
+    if not isinstance(qty, int) or qty < 0:
+        errors.append("quantity must be an integer >= 0")
+
+    price = data.get("price", None)
+    if price is not None:
+        try:
+            price = float(price)
+            if price < 0:
+                errors.append("price must be >= 0")
+        except Exception:
+            errors.append("price must be a number")
+
+    if errors:
+        return (
+            jsonify(
+                status=status.HTTP_400_BAD_REQUEST,
+                error="Bad Request",
+                message="; ".join(errors),
+            ),
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Enforce SKU uniqueness at the application level (DB unique constraint still applies)
+    if Inventory.query.filter(Inventory.sku == sku).first():
+        return jsonify(error=f"SKU '{sku}' already exists"), status.HTTP_409_CONFLICT
+
+    # Create and persist
+    inv = Inventory(
+        name=name,
+        sku=sku,
+        category=data.get("category"),
+        description=data.get("description"),
+        quantity=qty,
+        price=price,
+        available=bool(data.get("available", True)),
+    )
+    inv.create()
+
+    # Include Location header
+    location_url = f"/inventories/{inv.id}"
+    return jsonify(inv.serialize()), status.HTTP_201_CREATED, {"Location": location_url}
+
+
+@app.route("/inventories/<int:inventory_id>", methods=["GET"])
+def get_inventory_v2(inventory_id: int):
+    """Fetch a single inventory item by id."""
+    inv = Inventory.query.get(inventory_id)
+    if not inv:
+        return jsonify(error="Not Found"), status.HTTP_404_NOT_FOUND
+    return jsonify(inv.serialize()), status.HTTP_200_OK
+
+
+@app.route("/inventories/new", methods=["GET"])
+def new_inventory_page():
+    """Render the Create Inventory form page."""
+    return render_template("create_inventory.html")
