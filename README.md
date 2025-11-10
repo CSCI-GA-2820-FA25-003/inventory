@@ -2,8 +2,8 @@
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python](https://img.shields.io/badge/Language-Python-blue.svg)](https://python.org/)
-[![Build Status](https://github.com/nyu-devops/lab-flask-tdd/actions/workflows/ci.yml/badge.svg)](https://github.com/nyu-devops/lab-flask-tdd/actions)
-[![codecov](https://codecov.io/gh/nyu-devops/lab-flask-tdd/branch/master/graph/badge.svg?token=y6OUlCB4bC)](https://codecov.io/gh/nyu-devops/lab-flask-tdd)
+[![Build Status](https://github.com/CSCI-GA-2820-FA25-003/inventory/actions/workflows/ci.yml/badge.svg)](https://github.com/CSCI-GA-2820-FA25-003/inventory/actions)
+[![codecov](https://codecov.io/gh/CSCI-GA-2820-FA25-003/inventory/branch/master/graph/badge.svg?token=y6OUlCB4bC)](https://codecov.io/gh/CSCI-GA-2820-FA25-003/inventory)
 ## Overview
 
 This project is designed to monitor the inventory, which stores information such as name, category, quantity, price, description, and sku. The project can check the inventory is available or not as well. For users, the project supports operations such as create, read, update, list, and delete an inventory.
