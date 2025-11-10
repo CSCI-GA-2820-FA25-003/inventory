@@ -1,5 +1,5 @@
 # features/environment.py
-# Use Chromium + Chromedriver if available; otherwise fall back to Selenium Manager.
+# Use Chromium + Chromedriver
 
 import os
 import shutil

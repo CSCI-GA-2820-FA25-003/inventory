@@ -1,6 +1,4 @@
 # features/steps/inventories_steps.py
-# Force-fill inputs via JavaScript for headless reliability, with fallback for 'name'.
-# All comments in English as requested.
 
 import os
 import uuid
