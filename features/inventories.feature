@@ -42,3 +42,25 @@ Feature: Admin can create inventory items via the web UI
     And I submit the form
     Then I should see a failure status 409
     And I should see the response containing "already exists"
+
+Scenario: Update an inventory
+    When I visit the "Home Page"
+    And I set the "Name" to "First Item"
+    And I press the "Search" button
+    Then I should see the message "Success"
+    And I should see "First Item" in the "Name" field
+    And I should see "test" in the "Category" field
+    When I change "Name" to "Third Item"
+    And I press the "Update" button
+    Then I should see the message "Success"
+    When I copy the "Id" field
+    And I press the "Clear" button
+    And I paste the "Id" field
+    And I press the "Retrieve" button
+    Then I should see the message "Success"
+    And I should see "Third Item" in the "Name" field
+    When I press the "Clear" button
+    And I press the "Search" button
+    Then I should see the message "Success"
+    And I should see "Third Item" in the results
+    And I should not see "First Item" in the results
