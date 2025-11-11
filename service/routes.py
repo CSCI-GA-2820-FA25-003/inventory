@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-######################################################################
+#####################################################################
 
 """
 Inventory Service
@@ -336,4 +336,4 @@ def get_inventory_v2(inventory_id: int):
 @app.route("/inventories/new", methods=["GET"])
 def new_inventory_page():
     """Render the Create Inventory form page."""
-    return render_template("create_inventory.html")
+    return render_template("inventory.html")
