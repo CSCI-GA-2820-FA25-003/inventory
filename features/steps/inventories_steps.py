@@ -8,6 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
+ID_PREFIX = "inventory_"
 
 
 def _open_create_page(context):
@@ -120,3 +121,46 @@ def step_response_contains(context, snippet):
 def step_return_page(context):
     """Helper step to navigate back to the Create page if needed."""
     _open_create_page(context)
+
+
+@when('I visit the "Home Page"')
+def step_visit_home(context: Any) -> None:
+    """Open the application's home page."""
+    context.driver.get(context.base_url)
+
+
+@when('I enter "{text_string}" into the "{element_name}" field')
+def step_set_field(context: Any, element_name: str, text_string: str) -> None:
+    """Type into a text input field based on its element name."""
+    element_id = ID_PREFIX + element_name.lower().replace(" ", "_")
+    element = context.driver.find_element(By.ID, element_id)
+    element.clear()
+    element.send_keys(text_string)
+
+
+@when('I press the "{button}" button')
+def step_press_button(context: Any, button: str) -> None:
+    """Click a button whose ID is based on its label text."""
+    button_id = button.lower().replace(" ", "_") + "-btn"
+    context.driver.find_element(By.ID, button_id).click()
+
+
+@then('I should see the message "{message}"')
+def step_see_message(context: Any, message: str) -> None:
+    """Wait until a flash message with given text appears."""
+    found = WebDriverWait(context.driver, context.wait_seconds).until(
+        expected_conditions.text_to_be_present_in_element(
+            (By.ID, "flash_message"), message
+        )
+    )
+    assert found
+
+
+@then('I should see "{name}" in the results')
+def step_see_results(context: Any, name: str) -> None:
+    found = WebDriverWait(context.driver, context.wait_seconds).until(
+        expected_conditions.text_to_be_present_in_element(
+            (By.ID, "search_results"), name
+        )
+    )
+    assert found
