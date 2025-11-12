@@ -4,44 +4,199 @@
     <meta charset="utf-8">
     <title>Inventory</title>
     <style>
-      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; max-width: 720px; margin: 2rem auto; }
-      label { display: block; margin: 0.5rem 0; }
-      input[type="text"], input[type="number"] { width: 320px; padding: 6px; }
-      button { padding: 8px 14px; }
-      .result { background: #f6f8fa; padding: 12px; white-space: pre-wrap; border-radius: 6px; border: 1px solid #e1e4e8; min-height: 2.2em; }
-      section { margin-top: 2rem; }
+      :root {
+        color-scheme: light;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at top, #f2f7ff, #e8ecf3 45%, #dde3ee);
+        color: #111;
+      }
+      .container {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 2.5rem 1.5rem 3rem;
+      }
+      .hero {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      .hero h1 {
+        margin: 0;
+        font-size: 2.4rem;
+        letter-spacing: -0.5px;
+      }
+      .hero p {
+        margin: 0.5rem auto 0;
+        color: #4b5563;
+        max-width: 520px;
+        line-height: 1.5;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+      }
+      .card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 1.75rem;
+        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+      }
+      .card h2 {
+        margin: 0 0 1rem;
+        font-size: 1.4rem;
+      }
+      form {
+        display: grid;
+        gap: 0.9rem;
+      }
+      label {
+        display: flex;
+        flex-direction: column;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #4b5563;
+        gap: 0.35rem;
+      }
+      input[type="text"],
+      input[type="number"] {
+        width: 100%;
+        padding: 0.65rem 0.75rem;
+        border-radius: 10px;
+        border: 1px solid #d7dce5;
+        font-size: 1rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      input[type="text"]:focus,
+      input[type="number"]:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+      }
+      .checkbox {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-top: 0.25rem;
+      }
+      button {
+        padding: 0.65rem 1.5rem;
+        border: none;
+        border-radius: 999px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.15s, box-shadow 0.15s;
+      }
+      button:active {
+        transform: scale(0.97);
+      }
+      #submit {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: #fff;
+        box-shadow: 0 12px 24px rgba(37, 99, 235, 0.25);
+      }
+      #delete {
+        background: linear-gradient(135deg, #f43f5e, #be123c);
+        color: #fff;
+        box-shadow: 0 12px 24px rgba(244, 63, 94, 0.25);
+      }
+      .result {
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 12px;
+        min-height: 3rem;
+        white-space: pre-wrap;
+        border: 1px solid rgba(226, 232, 240, 0.2);
+        font-size: 0.9rem;
+        overflow-x: auto;
+      }
+      .result + small {
+        display: block;
+        margin-top: 0.35rem;
+        color: #94a3b8;
+      }
+      @media (max-width: 600px) {
+        .container {
+          padding: 1.75rem 1rem 2rem;
+        }
+        .hero h1 {
+          font-size: 2rem;
+        }
+      }
     </style>
   </head>
   <body>
-    <h1>Inventory</h1>
+    <div class="container">
+      <header class="hero">
+        <h1>Inventory Console</h1>
+        <p>Quickly create or delete inventory entries. Data is displayed in real-time in the response box below for easy API debugging.</p>
+      </header>
 
-    <section>
-      <h2>Create</h2>
-    <form id="inv-form">
-      <label>Name <input id="name" name="name" type="text" required></label>
-      <label>SKU <input id="sku" name="sku" type="text" required></label>
-      <label>Quantity <input id="quantity" name="quantity" type="number" min="0" value="0" required></label>
-      <label>Category <input id="category" name="category" type="text"></label>
-      <label>Description <input id="description" name="description" type="text"></label>
-      <label>Price <input id="price" name="price" type="number" step="0.01" min="0"></label>
-      <label>Available <input id="available" name="available" type="checkbox" checked></label>
-      <!-- Use a button (not submit) to avoid native form navigation -->
-      <button id="submit" type="button">Create</button>
-    </form>
+      <div class="grid">
+        <section class="card">
+          <h2>Create Inventory</h2>
+          <form id="inv-form">
+            <label>Name
+              <input id="name" name="name" type="text" placeholder="e.g. Coffee Beans" required>
+            </label>
+            <label>SKU
+              <input id="sku" name="sku" type="text" placeholder="Unique SKU" required>
+            </label>
+            <label>Quantity
+              <input id="quantity" name="quantity" type="number" min="0" value="0" required>
+            </label>
+            <label>Category
+              <input id="category" name="category" type="text" placeholder="E.g. Computer, Phone">
+            </label>
+            <label>Description
+              <input id="description" name="description" type="text" placeholder="Simply Describe the feature">
+            </label>
+            <label>Price
+              <input id="price" name="price" type="number" step="0.01" min="0" placeholder="USD">
+            </label>
+            <label class="checkbox">
+              <input id="available" name="available" type="checkbox" checked>
+              Available
+            </label>
+            <div class="actions">
+              <button id="submit" type="button">Create</button>
+            </div>
+          </form>
+          <h3>result</h3>
+          <pre id="result" class="result" aria-live="polite"></pre>
+          <small>The response will include the submitted payload to aid in troubleshooting.</small>
+        </section>
 
-    <h3>Result</h3>
-    <pre id="result" class="result" aria-live="polite"></pre>
-    </section>
-
-    <section>
-      <h2>Delete</h2>
-      <form id="delete-form">
-        <label>Inventory ID <input id="delete-id" name="inventory_id" type="number" min="1" required></label>
-        <button id="delete" type="button">Delete</button>
-      </form>
-      <h3>Delete Result</h3>
-      <pre id="delete-result" class="result" aria-live="polite"></pre>
-    </section>
+        <section class="card">
+          <h2>Delete Inventory</h2>
+          <form id="delete-form">
+            <label>Inventory ID
+              <input id="delete-id" name="inventory_id" type="number" min="1" placeholder="Input ID Existed" required>
+            </label>
+            <div class="actions">
+              <button id="delete" type="button">Delete</button>
+            </div>
+          </form>
+          <h3>result</h3>
+          <pre id="delete-result" class="result" aria-live="polite"></pre>
+          <small>The REST path for the delete operation is:DELETE /inventory/&lt;id&gt;</small>
+        </section>
+      </div>
+    </div>
 
     <script>
       // Safe getters by id
@@ -103,3 +258,4 @@
     </script>
   </body>
 </html>
+
