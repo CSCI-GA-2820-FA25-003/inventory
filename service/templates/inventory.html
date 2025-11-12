@@ -2,18 +2,21 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Create Inventory</title>
+    <title>Inventory</title>
     <style>
       body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; max-width: 720px; margin: 2rem auto; }
       label { display: block; margin: 0.5rem 0; }
       input[type="text"], input[type="number"] { width: 320px; padding: 6px; }
       button { padding: 8px 14px; }
-      #result { background: #f6f8fa; padding: 12px; white-space: pre-wrap; border-radius: 6px; border: 1px solid #e1e4e8; min-height: 2.2em; }
+      .result { background: #f6f8fa; padding: 12px; white-space: pre-wrap; border-radius: 6px; border: 1px solid #e1e4e8; min-height: 2.2em; }
+      section { margin-top: 2rem; }
     </style>
   </head>
   <body>
-    <h1>Create Inventory</h1>
+    <h1>Inventory</h1>
 
+    <section>
+      <h2>Create</h2>
     <form id="inv-form">
       <label>Name <input id="name" name="name" type="text" required></label>
       <label>SKU <input id="sku" name="sku" type="text" required></label>
@@ -27,7 +30,18 @@
     </form>
 
     <h3>Result</h3>
-    <pre id="result" aria-live="polite"></pre>
+    <pre id="result" class="result" aria-live="polite"></pre>
+    </section>
+
+    <section>
+      <h2>Delete</h2>
+      <form id="delete-form">
+        <label>Inventory ID <input id="delete-id" name="inventory_id" type="number" min="1" required></label>
+        <button id="delete" type="button">Delete</button>
+      </form>
+      <h3>Delete Result</h3>
+      <pre id="delete-result" class="result" aria-live="polite"></pre>
+    </section>
 
     <script>
       // Safe getters by id
@@ -63,6 +77,27 @@
           result.textContent = `Status ${res.status}\n` + text + `\nEcho-Payload: ` + JSON.stringify(payload);
         } catch (err) {
           result.textContent = `Status 0\n` + String(err) + `\nEcho-Payload: ` + JSON.stringify(payload);
+        }
+      });
+
+      // Delete handler targets /inventory/<id>
+      document.getElementById('delete').addEventListener('click', async () => {
+        const result = document.getElementById('delete-result');
+        const id = (val('delete-id') || "").trim();
+
+        if (!id) {
+          result.textContent = "Provide an inventory id to delete.";
+          return;
+        }
+
+        result.textContent = `Deleting inventory ${id}...`;
+        try {
+          const res = await fetch(`/inventory/${encodeURIComponent(id)}`, { method: 'DELETE' });
+          const body = await res.text();
+          const ok = res.status === 204;
+          result.textContent = `Status ${res.status}\n` + (ok ? `Inventory ${id} deleted.` : body || "Unexpected response.");
+        } catch (err) {
+          result.textContent = `Status 0\n` + String(err);
         }
       });
     </script>
