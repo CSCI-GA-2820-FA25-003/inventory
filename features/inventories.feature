@@ -64,3 +64,11 @@ Scenario: Update an inventory
     Then I should see the message "Success"
     And I should see "Third Item" in the results
     And I should not see "First Item" in the results
+
+  Scenario: Read an existing inventory item
+    When I visit the "Home Page"
+    And I enter "First Item" into the "Name" field
+    And I press the "Search" button
+    Then I should see the message "Success"
+    And I should see "Name" in the results
+    And I should see "Category" in the results
