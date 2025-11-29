@@ -334,6 +334,17 @@ def create_inventory_v2():
     if restock_error:
         errors.append(restock_error)
 
+    # NEW: stop early if any validation errors collected
+    if errors:
+        return (
+            jsonify(
+                status=status.HTTP_400_BAD_REQUEST,
+                error="Bad Request",
+                message="; ".join(errors),
+            ),
+            status.HTTP_400_BAD_REQUEST,
+        )
+
     # Create and persist
     inv = Inventory(
         name=name,
