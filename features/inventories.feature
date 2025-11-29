@@ -65,10 +65,48 @@ Scenario: Update an inventory
     And I should see "Third Item" in the results
     And I should not see "First Item" in the results
 
-  Scenario: Read an existing inventory item
-    When I visit the "Home Page"
-    And I enter "First Item" into the "Name" field
-    And I press the "Search" button
-    Then I should see the message "Success"
-    And I should see "Name" in the results
-    And I should see "Category" in the results
+Scenario: Read an existing inventory item
+    When I visit the "Create Inventory page"
+    And I fill the form with:
+      | name        | Read Test Item |
+      | sku         | 0001           |
+      | quantity    | 4              |
+      | category    | gadgets        |
+      | description | for read test  |
+      | price       | 10             |
+      | available   | true           |
+    And I submit the form
+    Then I should see a success status 201
+
+    # Extract ID from creation response
+    When I copy the id from the create result
+
+    # Now read the same item
+    And I enter the copied id into the "read-id" field
+    And I press the "read" button
+
+    Then I should see a success status 200
+    And I should see "Read Test Item" in the read results
+    And I should see "gadgets" in the read results
+
+
+Scenario: Restock status reflects quantity relative to restock level
+    When I visit the "Create Inventory" page
+    And I fill the form with:
+      | name          | Restock Test Item |
+      | sku           | 0001              |
+      | quantity      | 20                |
+      | restock_level | 10                |
+      | category      | test              |
+      | description   | restock check     |
+      | price         | 5                 |
+      | available     | true              |
+    And I submit the form
+    Then I should see a success status 201
+
+    When I copy the id from the create result
+
+    And I enter the copied id into the "status-id" field
+    And I press the "status" button
+
+    Then I should see "stock sufficient" in the status results

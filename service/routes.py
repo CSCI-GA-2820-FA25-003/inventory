@@ -307,6 +307,26 @@ def create_inventory_v2():
     if Inventory.query.filter(Inventory.sku == sku).first():
         return jsonify(error=f"SKU '{sku}' already exists"), status.HTTP_409_CONFLICT
 
+    # restock level (optional)
+    restock_level = data.get("restock_level")
+    if restock_level is not None:
+        try:
+            restock_level = int(restock_level)
+            if restock_level < 0:
+                errors.append("restock_level must be >= 0")
+        except Exception:
+            errors.append("restock_level must be an integer")
+
+    if errors:
+        return (
+            jsonify(
+                status=status.HTTP_400_BAD_REQUEST,
+                error="Bad Request",
+                message="; ".join(errors),
+            ),
+            status.HTTP_400_BAD_REQUEST,
+        )
+
     # Create and persist
     inv = Inventory(
         name=name,
@@ -316,6 +336,7 @@ def create_inventory_v2():
         quantity=qty,
         price=price,
         available=bool(data.get("available", True)),
+        restock_level=restock_level,
     )
     inv.create()
 
@@ -337,3 +358,34 @@ def get_inventory_v2(inventory_id: int):
 def new_inventory_page():
     """Render the Create Inventory form page."""
     return render_template("inventory.html")
+
+
+######################################################################
+# GET RESTOCK STATUS FOR AN INVENTORY ITEM
+######################################################################
+@app.route("/inventory/<int:inventory_id>/restock-status", methods=["GET"])
+def get_restock_status(inventory_id):
+    """
+    Returns the stock status for an inventory item.
+    'stock sufficient', 'stock insufficient', or 'undefined'
+    """
+    app.logger.info("Request to get restock status for inventory [%s]", inventory_id)
+
+    inventory = Inventory.find(inventory_id)
+    if not inventory:
+        abort(
+            status.HTTP_404_NOT_FOUND,
+            f"Inventory with id '{inventory_id}' was not found.",
+        )
+
+    return (
+        jsonify(
+            {
+                "id": inventory.id,
+                "stock_status": inventory.stock_status,
+                "quantity": inventory.quantity,
+                "restock_level": inventory.restock_level,
+            }
+        ),
+        status.HTTP_200_OK,
+    )
