@@ -263,8 +263,21 @@ def health():
 ######################################################################
 # BDD/UI additions
 ######################################################################
+def err(msg):
+    """Helper to return uniform 400 responses"""
+    return (
+        jsonify(
+            status=status.HTTP_400_BAD_REQUEST,
+            error="Bad Request",
+            message=msg,
+        ),
+        status.HTTP_400_BAD_REQUEST,
+    )
+
+
 @app.route("/inventories", methods=["POST"])
 def create_inventory_v2():
+    """Create a new inventory item with validation and return it."""
     check_content_type("application/json")
     data = request.get_json() or {}
 
@@ -325,17 +338,6 @@ def create_inventory_v2():
         jsonify(inv.serialize()),
         status.HTTP_201_CREATED,
         {"Location": f"/inventories/{inv.id}"},
-    )
-
-
-def err(msg):
-    return (
-        jsonify(
-            status=status.HTTP_400_BAD_REQUEST,
-            error="Bad Request",
-            message=msg,
-        ),
-        status.HTTP_400_BAD_REQUEST,
     )
 
 
