@@ -284,28 +284,27 @@ def validate_restock_level(value):
         return None, "restock_level must be an integer"
 
 
-@app.route("/inventories", methods=["POST"])
-def create_inventory_v2():
-    """Create an inventory item. Requires JSON with name, sku, quantity."""
-    # Enforce JSON Content-Type
-    check_content_type("application/json")
-    data = request.get_json() or {}
-
-    # Validate required fields and constraints
+def validate_required_fields(data):
+    """Validate required non-empty string fields."""
     errors = []
-    name = data.get("name")
-    if not name:
+    if not data.get("name"):
         errors.append("name is required")
-
-    sku = data.get("sku")
-    if not sku:
+    if not data.get("sku"):
         errors.append("sku is required")
+    return errors
 
+
+def validate_numeric_fields(data):
+    """Validate quantity, price, and return clean numeric values or errors."""
+    errors = []
     qty = data.get("quantity")
+    price = data.get("price")
+
+    # Quantity
     if not isinstance(qty, int) or qty < 0:
         errors.append("quantity must be an integer >= 0")
 
-    price = data.get("price", None)
+    # Price (optional)
     if price is not None:
         try:
             price = float(price)
@@ -314,27 +313,32 @@ def create_inventory_v2():
         except (ValueError, TypeError):
             errors.append("price must be a number")
 
-    if errors:
-        return (
-            jsonify(
-                status=status.HTTP_400_BAD_REQUEST,
-                error="Bad Request",
-                message="; ".join(errors),
-            ),
-            status.HTTP_400_BAD_REQUEST,
-        )
+    return errors
 
-    # Enforce SKU uniqueness at the application level (DB unique constraint still applies)
+
+@app.route("/inventories", methods=["POST"])
+def create_inventory_v2():
+    """Create an inventory item."""
+    check_content_type("application/json")
+    data = request.get_json() or {}
+
+    # Run validations
+    errors = []
+    errors += validate_required_fields(data)
+    errors += validate_numeric_fields(data)
+
+    # SKU uniqueness
+    sku = data.get("sku")
     if Inventory.query.filter(Inventory.sku == sku).first():
         return jsonify(error=f"SKU '{sku}' already exists"), status.HTTP_409_CONFLICT
 
-    # restock level (optional)
+    # Optional restock level
     restock_level_raw = data.get("restock_level")
     restock_level, restock_error = validate_restock_level(restock_level_raw)
     if restock_error:
         errors.append(restock_error)
 
-    # NEW: stop early if any validation errors collected
+    # Return Bad Request if any validation failures
     if errors:
         return (
             jsonify(
@@ -345,22 +349,24 @@ def create_inventory_v2():
             status.HTTP_400_BAD_REQUEST,
         )
 
-    # Create and persist
+    # Create
     inv = Inventory(
-        name=name,
+        name=data.get("name"),
         sku=sku,
         category=data.get("category"),
         description=data.get("description"),
-        quantity=qty,
-        price=price,
+        quantity=data.get("quantity"),
+        price=data.get("price"),
         available=bool(data.get("available", True)),
         restock_level=restock_level,
     )
     inv.create()
 
-    # Include Location header
-    location_url = f"/inventories/{inv.id}"
-    return jsonify(inv.serialize()), status.HTTP_201_CREATED, {"Location": location_url}
+    return (
+        jsonify(inv.serialize()),
+        status.HTTP_201_CREATED,
+        {"Location": f"/inventories/{inv.id}"},
+    )
 
 
 @app.route("/inventories/<int:inventory_id>", methods=["GET"])
