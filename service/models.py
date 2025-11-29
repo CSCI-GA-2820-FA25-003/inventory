@@ -17,7 +17,7 @@ class DataValidationError(Exception):
     """Used for an data validation errors when deserializing"""
 
 
-class Inventory(db.Model):
+class Inventory(db.Model):  # pylint: disable=too-many-instance-attributes
     """
     Class that represents a Inventory
     """
