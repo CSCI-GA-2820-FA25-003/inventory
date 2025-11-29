@@ -21,11 +21,18 @@ This service implements a REST API that allows you to Create, Read, Update
 and Delete Inventory
 """
 
-from flask import jsonify, request, url_for, abort
-from flask import current_app as app  # Import Flask application
+from flask import (
+    jsonify,
+    request,
+    url_for,
+    abort,
+    render_template,
+    current_app as app,
+)
+
+# First-party imports
 from service.models import Inventory
-from service.common import status  # HTTP Status Codes
-from flask import render_template
+from service.common import status
 
 
 ######################################################################
@@ -263,82 +270,86 @@ def health():
 ######################################################################
 # BDD/UI additions
 ######################################################################
-def err(msg):
-    """Helper to return uniform 400 responses"""
-    return (
-        jsonify(
-            status=status.HTTP_400_BAD_REQUEST,
-            error="Bad Request",
-            message=msg,
-        ),
-        status.HTTP_400_BAD_REQUEST,
-    )
+def validate_restock_level(value):
+    """Validate optional restock_level field."""
+    if value is None:
+        return None, None  # (clean_value, error_message)
+
+    try:
+        clean = int(value)
+        if clean < 0:
+            return None, "restock_level must be >= 0"
+        return clean, None
+    except (ValueError, TypeError):
+        return None, "restock_level must be an integer"
 
 
 @app.route("/inventories", methods=["POST"])
 def create_inventory_v2():
-    """Create a new inventory item with validation and return it."""
+    """Create an inventory item. Requires JSON with name, sku, quantity."""
+    # Enforce JSON Content-Type
     check_content_type("application/json")
     data = request.get_json() or {}
 
+    # Validate required fields and constraints
+    errors = []
     name = data.get("name")
     if not name:
-        return err("name is required")
+        errors.append("name is required")
 
     sku = data.get("sku")
     if not sku:
-        return err("sku is required")
+        errors.append("sku is required")
 
-    # Quantity
-    try:
-        qty = int(data.get("quantity"))
-        if qty < 0:
-            return err("quantity must be an integer >= 0")
-    except Exception:
-        return err("quantity must be an integer")
+    qty = data.get("quantity")
+    if not isinstance(qty, int) or qty < 0:
+        errors.append("quantity must be an integer >= 0")
 
-    # Price (optional)
-    price = data.get("price")
+    price = data.get("price", None)
     if price is not None:
         try:
             price = float(price)
             if price < 0:
-                return err("price must be >= 0")
-        except Exception:
-            return err("price must be a number")
+                errors.append("price must be >= 0")
+        except (ValueError, TypeError):
+            errors.append("price must be a number")
 
-    # Restock Level (optional)
-    restock = data.get("restock_level")
-    if restock is not None:
-        try:
-            restock = int(restock)
-            if restock < 0:
-                return err("restock_level must be >= 0")
-        except Exception:
-            return err("restock_level must be an integer")
+    if errors:
+        return (
+            jsonify(
+                status=status.HTTP_400_BAD_REQUEST,
+                error="Bad Request",
+                message="; ".join(errors),
+            ),
+            status.HTTP_400_BAD_REQUEST,
+        )
 
-    # SKU uniqueness
+    # Enforce SKU uniqueness at the application level (DB unique constraint still applies)
     if Inventory.query.filter(Inventory.sku == sku).first():
         return jsonify(error=f"SKU '{sku}' already exists"), status.HTTP_409_CONFLICT
 
-    # Create item
+    # restock level (optional)
+    restock_level_raw = data.get("restock_level")
+    restock_level, restock_error = validate_restock_level(restock_level_raw)
+    if restock_error:
+        errors.append(restock_error)
+
+    # Create and persist
     inv = Inventory(
         name=name,
         sku=sku,
-        quantity=qty,
-        price=price,
         category=data.get("category"),
         description=data.get("description"),
+        quantity=qty,
+        price=price,
         available=bool(data.get("available", True)),
-        restock_level=restock,
+        restock_level=restock_level,
     )
     inv.create()
 
-    return (
-        jsonify(inv.serialize()),
-        status.HTTP_201_CREATED,
-        {"Location": f"/inventories/{inv.id}"},
-    )
+    # Include Location header
+    location_url = f"/inventories/{inv.id}"
+    return jsonify(inv.serialize()), status.HTTP_201_CREATED, {"Location": location_url}
 
 
 @app.route("/inventories/<int:inventory_id>", methods=["GET"])
