@@ -15,7 +15,7 @@ def client():
 
 
 def test_bdd_create_inventory_success(client):
-    """POST /inventories returns 201 with Location and JSON body"""
+    """POST /api/inventory returns 201 with Location and JSON body"""
     sku = f"BDD-{uuid.uuid4().hex[:8]}"
     payload = {
         "name": "BDD Item",
@@ -26,7 +26,7 @@ def test_bdd_create_inventory_success(client):
         "price": 9.99,
         "available": True,
     }
-    resp = client.post("/inventories", json=payload)
+    resp = client.post("/api/inventory", json=payload)
     assert resp.status_code == status.HTTP_201_CREATED
     assert "Location" in resp.headers
 
@@ -36,7 +36,7 @@ def test_bdd_create_inventory_success(client):
     inv_id = data["id"]
 
     # GET /inventories/<id> returns 200 and the same item
-    resp_get = client.get(f"/inventories/{inv_id}")
+    resp_get = client.get(f"/api/inventory/{inv_id}")
     assert resp_get.status_code == status.HTTP_200_OK
     got = resp_get.get_json()
     assert got["id"] == inv_id
@@ -47,15 +47,15 @@ def test_bdd_create_inventory_duplicate_sku(client):
     """Second POST with same SKU returns 409"""
     sku = f"DUP-{uuid.uuid4().hex[:8]}"
     payload = {"name": "First", "sku": sku, "quantity": 1, "available": True}
-    first = client.post("/inventories", json=payload)
+    first = client.post("/api/inventory", json=payload)
     assert first.status_code == status.HTTP_201_CREATED
-    second = client.post("/inventories", json=payload)
+    second = client.post("/api/inventory", json=payload)
     assert second.status_code == status.HTTP_409_CONFLICT
 
 
 def test_bdd_create_inventory_page(client):
-    """GET /inventories/new renders the HTML form"""
-    resp = client.get("/inventories/new")
+    """GET /inventory/new renders the HTML form"""
+    resp = client.get("/inventory/new")
     assert resp.status_code == status.HTTP_200_OK
     assert b"<form" in resp.data
     assert b"Create" in resp.data
@@ -74,7 +74,7 @@ def test_health_endpoint(client):
 def test_bdd_create_inventory_requires_json(client):
     """Non-JSON Content-Type should return 415 (unsupported media type)."""
     resp = client.post(
-        "/inventories", data="{}", headers={"Content-Type": "text/plain"}
+        "/api/inventory", data="{}", headers={"Content-Type": "text/plain"}
     )
     assert resp.status_code == status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
     msg = resp.get_json()
@@ -88,21 +88,21 @@ def test_bdd_create_inventory_missing_name(client):
         "quantity": 1,
         "available": True,
     }
-    resp = client.post("/inventories", json=payload)
+    resp = client.post("/api/inventory", json=payload)
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
 def test_bdd_create_inventory_missing_sku(client):
     """Missing 'sku' should return 400."""
     payload = {"name": "No SKU", "quantity": 1, "available": True}
-    resp = client.post("/inventories", json=payload)
+    resp = client.post("/api/inventory", json=payload)
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
 def test_bdd_create_inventory_quantity_negative(client):
     """Negative quantity should return 400."""
     payload = {"name": "Bad Q", "sku": f"NEGQ-{uuid.uuid4().hex[:6]}", "quantity": -1}
-    resp = client.post("/inventories", json=payload)
+    resp = client.post("/api/inventory", json=payload)
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
@@ -113,7 +113,7 @@ def test_bdd_create_inventory_quantity_not_int(client):
         "sku": f"NONINT-{uuid.uuid4().hex[:6]}",
         "quantity": "x",
     }
-    resp = client.post("/inventories", json=payload)
+    resp = client.post("/api/inventory", json=payload)
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
@@ -125,7 +125,7 @@ def test_bdd_create_inventory_price_negative(client):
         "quantity": 1,
         "price": -0.01,
     }
-    resp = client.post("/inventories", json=payload)
+    resp = client.post("/api/inventory", json=payload)
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
@@ -137,11 +137,11 @@ def test_bdd_create_inventory_price_not_number(client):
         "quantity": 1,
         "price": "abc",
     }
-    resp = client.post("/inventories", json=payload)
+    resp = client.post("/api/inventory", json=payload)
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
 def test_bdd_get_inventory_v2_not_found(client):
-    """GET /inventories/<id> 404 branch."""
-    resp = client.get("/inventories/999999999")
+    """GET /api/inventory/<id> 404 branch."""
+    resp = client.get("/api/inventory/999999999")
     assert resp.status_code == status.HTTP_404_NOT_FOUND
