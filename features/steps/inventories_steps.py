@@ -2,6 +2,7 @@
 
 import os
 import uuid
+from typing import Any
 from behave import given, when, then
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -9,11 +10,44 @@ from selenium.webdriver.support import expected_conditions as EC
 
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 ID_PREFIX = "inventory_"
+WAIT_SECONDS = int(os.getenv("WAIT_SECONDS", "15"))
+FLASH_MESSAGE_ID = "flash_message"
+SEARCH_RESULTS_ID = "search_results"
+CLIPBOARD_ATTR = "_clipboard_value"
 
 
 def _open_create_page(context):
     """Navigate to the Create Inventory UI page."""
     context.browser.get(f"{BASE_URL}/inventories/new")
+
+
+def _field_id(element_name: str) -> str:
+    """Normalize a human readable label into an element id."""
+    return ID_PREFIX + element_name.lower().replace(" ", "_")
+
+
+def _find_field(context, element_name: str):
+    """Locate an input on the page based on its label text."""
+    return context.browser.find_element(By.ID, _field_id(element_name))
+
+
+def _set_field_value(context, element_name: str, value: str) -> None:
+    """Clear an input and replace it with the provided value."""
+    element = _find_field(context, element_name)
+    element.clear()
+    element.send_keys(value)
+
+
+def _store_clipboard(context, value: str) -> None:
+    """Persist a copied value on the behave context."""
+    setattr(context, CLIPBOARD_ATTR, value)
+
+
+def _read_clipboard(context) -> str:
+    """Fetch the previously copied value."""
+    if not hasattr(context, CLIPBOARD_ATTR):
+        raise AssertionError("No value has been copied yet.")
+    return getattr(context, CLIPBOARD_ATTR)
 
 
 def _js_set_value(context, elem_id, value):
@@ -126,41 +160,75 @@ def step_return_page(context):
 @when('I visit the "Home Page"')
 def step_visit_home(context: Any) -> None:
     """Open the application's home page."""
-    context.driver.get(context.base_url)
+    context.browser.get(BASE_URL)
 
 
 @when('I enter "{text_string}" into the "{element_name}" field')
 def step_set_field(context: Any, element_name: str, text_string: str) -> None:
     """Type into a text input field based on its element name."""
-    element_id = ID_PREFIX + element_name.lower().replace(" ", "_")
-    element = context.driver.find_element(By.ID, element_id)
-    element.clear()
-    element.send_keys(text_string)
+    _set_field_value(context, element_name, text_string)
+
+
+@when('I set the "{element_name}" to "{text_string}"')
+def step_explicit_set_field(context: Any, element_name: str, text_string: str) -> None:
+    """Alias for entering text into a field."""
+    _set_field_value(context, element_name, text_string)
+
+
+@when('I change "{element_name}" to "{text_string}"')
+def step_change_field(context: Any, element_name: str, text_string: str) -> None:
+    """Another alias for updating a field's value."""
+    _set_field_value(context, element_name, text_string)
+
+
+@when('I copy the "{element_name}" field')
+def step_copy_field(context: Any, element_name: str) -> None:
+    """Copy the current value of an input field into a clipboard cache."""
+    value = _find_field(context, element_name).get_attribute("value") or ""
+    _store_clipboard(context, value)
+
+
+@when('I paste the "{element_name}" field')
+def step_paste_field(context: Any, element_name: str) -> None:
+    """Paste the previously copied value into the requested field."""
+    _set_field_value(context, element_name, _read_clipboard(context))
 
 
 @when('I press the "{button}" button')
 def step_press_button(context: Any, button: str) -> None:
     """Click a button whose ID is based on its label text."""
     button_id = button.lower().replace(" ", "_") + "-btn"
-    context.driver.find_element(By.ID, button_id).click()
+    context.browser.find_element(By.ID, button_id).click()
 
 
 @then('I should see the message "{message}"')
 def step_see_message(context: Any, message: str) -> None:
     """Wait until a flash message with given text appears."""
-    found = WebDriverWait(context.driver, context.wait_seconds).until(
-        expected_conditions.text_to_be_present_in_element(
-            (By.ID, "flash_message"), message
-        )
+    found = WebDriverWait(context.browser, WAIT_SECONDS).until(
+        EC.text_to_be_present_in_element((By.ID, FLASH_MESSAGE_ID), message)
     )
     assert found
 
 
 @then('I should see "{name}" in the results')
 def step_see_results(context: Any, name: str) -> None:
-    found = WebDriverWait(context.driver, context.wait_seconds).until(
-        expected_conditions.text_to_be_present_in_element(
-            (By.ID, "search_results"), name
-        )
+    """Wait for the search results area to contain specific text."""
+    found = WebDriverWait(context.browser, WAIT_SECONDS).until(
+        EC.text_to_be_present_in_element((By.ID, SEARCH_RESULTS_ID), name)
     )
     assert found
+
+
+@then('I should not see "{name}" in the results')
+def step_not_see_results(context: Any, name: str) -> None:
+    """Assert that the results area no longer includes the provided text."""
+    WebDriverWait(context.browser, WAIT_SECONDS).until_not(
+        lambda d: name in d.find_element(By.ID, SEARCH_RESULTS_ID).text
+    )
+
+
+@then('I should see "{text_string}" in the "{element_name}" field')
+def step_see_value_in_field(context: Any, element_name: str, text_string: str) -> None:
+    """Verify the value of an input matches expectations."""
+    value = _find_field(context, element_name).get_attribute("value")
+    assert value == text_string, f'Expected "{text_string}" but found "{value}".'
