@@ -1,0 +1,322 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Inventory</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at top, #f2f7ff, #e8ecf3 45%, #dde3ee);
+        color: #111;
+      }
+      .container {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 2.5rem 1.5rem 3rem;
+      }
+      .hero {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      .hero h1 {
+        margin: 0;
+        font-size: 2.4rem;
+        letter-spacing: -0.5px;
+      }
+      .hero p {
+        margin: 0.5rem auto 0;
+        color: #4b5563;
+        max-width: 520px;
+        line-height: 1.5;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+      }
+      .card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 1.75rem;
+        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+      }
+      .card h2 {
+        margin: 0 0 1rem;
+        font-size: 1.4rem;
+      }
+      form {
+        display: grid;
+        gap: 0.9rem;
+      }
+      label {
+        display: flex;
+        flex-direction: column;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #4b5563;
+        gap: 0.35rem;
+      }
+      input[type="text"],
+      input[type="number"] {
+        width: 100%;
+        padding: 0.65rem 0.75rem;
+        border-radius: 10px;
+        border: 1px solid #d7dce5;
+        font-size: 1rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      input[type="text"]:focus,
+      input[type="number"]:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+      }
+      .checkbox {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-top: 0.25rem;
+      }
+      button {
+        padding: 0.65rem 1.5rem;
+        border: none;
+        border-radius: 999px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.15s, box-shadow 0.15s;
+      }
+      button:active {
+        transform: scale(0.97);
+      }
+      #submit {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: #fff;
+        box-shadow: 0 12px 24px rgba(37, 99, 235, 0.25);
+      }
+      #delete {
+        background: linear-gradient(135deg, #f43f5e, #be123c);
+        color: #fff;
+        box-shadow: 0 12px 24px rgba(244, 63, 94, 0.25);
+      }
+      .result {
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 12px;
+        min-height: 3rem;
+        white-space: pre-wrap;
+        border: 1px solid rgba(226, 232, 240, 0.2);
+        font-size: 0.9rem;
+        overflow-x: auto;
+      }
+      .result + small {
+        display: block;
+        margin-top: 0.35rem;
+        color: #94a3b8;
+      }
+      @media (max-width: 600px) {
+        .container {
+          padding: 1.75rem 1rem 2rem;
+        }
+        .hero h1 {
+          font-size: 2rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header class="hero">
+        <h1>Inventory Console</h1>
+        <p>Quickly create or delete inventory entries. Data is displayed in real-time in the response box below for easy API debugging.</p>
+      </header>
+
+      <div class="grid">
+        <section class="card">
+          <h2>Create Inventory</h2>
+          <form id="inv-form">
+            <label>Name
+              <input id="name" name="name" type="text" placeholder="e.g. Coffee Beans" required>
+            </label>
+            <label>SKU
+              <input id="sku" name="sku" type="text" placeholder="Unique SKU" required>
+            </label>
+            <label>Quantity
+              <input id="quantity" name="quantity" type="number" min="0" value="0" required>
+            </label>
+            <label>Restock Level
+                <input id="restock_level" name="restock_level" type="number" min="0" placeholder="Optional">
+            </label>
+            <label>Category
+              <input id="category" name="category" type="text" placeholder="E.g. Computer, Phone">
+            </label>
+            <label>Description
+              <input id="description" name="description" type="text" placeholder="Simply Describe the feature">
+            </label>
+            <label>Price
+              <input id="price" name="price" type="number" step="0.01" min="0" placeholder="USD">
+            </label>
+            <label>Restock Level
+              <input id="restock_level" name="restock_level" type="number" min="0" placeholder="e.g. 10">
+            </label>
+            <label class="checkbox">
+              <input id="available" name="available" type="checkbox" checked>
+              Available
+            </label>
+            <div class="actions">
+              <button id="submit" type="button">Create</button>
+            </div>
+          </form>
+          <h3>result</h3>
+          <pre id="result" class="result" aria-live="polite"></pre>
+          <small>The response will include the submitted payload to aid in troubleshooting.</small>
+        </section>
+        <section class="card">
+          <h2>Check Restock Level</h2>
+          <form id="status-form">
+            <label>Inventory ID
+              <input id="status-id" name="inventory_id" type="number" min="1" placeholder="Enter Inventory ID" required>
+            </label>
+            <div class="actions">
+              <button id="status" type="button">Check Status</button>
+            </div>
+          </form>
+          <h3>result</h3>
+          <pre id="status-result" class="result" aria-live="polite"></pre>
+          <small>The REST path for this operation is: GET /inventory/&lt;id&gt;/restock-status</small>
+        </section>
+        <section class="card">
+          <h2>Read Inventory</h2>
+          <form id="read-form">
+            <label>Inventory ID
+              <input id="read-id" name="inventory_id" type="number" min="1" placeholder="Enter Inventory ID" required>
+            </label>
+            <div class="actions">
+              <button id="read" type="button">Read</button>
+            </div>
+          </form>
+          <h3>result</h3>
+          <pre id="read-result" class="result" aria-live="polite"></pre>
+          <small>The REST path for this operation is: GET /inventories/&lt;id&gt;</small>
+        </section>
+
+        <section class="card">
+          <h2>Delete Inventory</h2>
+          <form id="delete-form">
+            <label>Inventory ID
+              <input id="delete-id" name="inventory_id" type="number" min="1" placeholder="Input ID Existed" required>
+            </label>
+            <div class="actions">
+              <button id="delete" type="button">Delete</button>
+            </div>
+          </form>
+          <h3>result</h3>
+          <pre id="delete-result" class="result" aria-live="polite"></pre>
+          <small>The REST path for the delete operation is:DELETE /inventory/&lt;id&gt;</small>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      // Safe getters by id
+      function val(id) { const el = document.getElementById(id); return el ? el.value : ""; }
+      function boolChecked(id) { const el = document.getElementById(id); return !!(el && el.checked); }
+
+      // Send JSON to /inventories on button click and always write a result (success or error).
+      document.getElementById('submit').addEventListener('click', async () => {
+        const result = document.getElementById('result');
+
+        // Build payload explicitly from element ids (avoid HTMLFormElement.name collision)
+        const payload = {
+          name: (val('name') || "").trim(),
+          sku: (val('sku') || "").trim(),
+          quantity: Number(val('quantity') || "0"),
+          restock_level: val('restock_level') === "" ? null : Number(val('restock_level')),
+          category: (val('category') || "").trim() || null,
+          description: (val('description') || "").trim() || null,
+          price: val('price') === "" ? null : Number(val('price')),
+          available: boolChecked('available')
+        };
+
+        // Show payload for debugging before sending
+        result.textContent = 'Submitting...\nPayload: ' + JSON.stringify(payload);
+
+        try {
+          const res = await fetch('/inventories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const text = await res.text();
+          // Echo payload with the response to aid debugging in headless runs
+          result.textContent = `Status ${res.status}\n` + text + `\nEcho-Payload: ` + JSON.stringify(payload);
+        } catch (err) {
+          result.textContent = `Status 0\n` + String(err) + `\nEcho-Payload: ` + JSON.stringify(payload);
+        }
+      });
+
+      // Delete handler targets /inventory/<id>
+      document.getElementById('delete').addEventListener('click', async () => {
+        const result = document.getElementById('delete-result');
+        const id = (val('delete-id') || "").trim();
+
+        if (!id) {
+          result.textContent = "Provide an inventory id to delete.";
+          return;
+        }
+
+        result.textContent = `Deleting inventory ${id}...`;
+        try {
+          const res = await fetch(`/inventory/${encodeURIComponent(id)}`, { method: 'DELETE' });
+          const body = await res.text();
+          const ok = res.status === 204;
+          result.textContent = `Status ${res.status}\n` + (ok ? `Inventory ${id} deleted.` : body || "Unexpected response.");
+        } catch (err) {
+          result.textContent = `Status 0\n` + String(err);
+        }
+      });
+
+      // Stock Status handler: GET /inventory/<id>/restock-status
+      document.getElementById('status').addEventListener('click', async () => {
+        const result = document.getElementById('status-result');
+        const id = (val('status-id') || "").trim();
+
+        if (!id) {
+          result.textContent = "Provide an inventory id.";
+          return;
+        }
+
+        result.textContent = `Checking stock status for inventory ${id}...`;
+
+        try {
+          const res = await fetch(`/inventory/${encodeURIComponent(id)}/restock-status`, {
+            method: 'GET',
+          });
+
+          const text = await res.text();
+          result.textContent = `Status ${res.status}\n` + text;
+
+        } catch (err) {
+          result.textContent = `Status 0\n` + String(err);
+        }
+      });
+
+    </script>
+  </body>
+</html>
+
