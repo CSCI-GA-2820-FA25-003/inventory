@@ -110,3 +110,52 @@ Scenario: Restock status reflects quantity relative to restock level
     And I press the "status" button
 
     Then I should see "stock sufficient" in the status results
+  Scenario: Read an existing inventory item
+    When I visit the "Home Page"
+    And I enter "First Item" into the "Name" field
+    And I press the "Search" button
+    Then I should see the message "Success"
+    And I should see "Name" in the results
+    And I should see "Category" in the results
+
+  Scenario: Delete an existing inventory item
+    When I visit the "Home Page"
+    And I set the "Name" to "First Item"
+    And I press the "Search" button
+    Then I should see the message "Success"
+    And I should see "First Item" in the "Name" field
+    When I copy the "Id" field
+    And I press the "Clear" button
+    And I paste the "Id" field
+    And I press the "Delete" button
+    Then I should see the message "Success"
+    When I press the "Clear" button
+    And I set the "Name" to "First Item"
+    And I press the "Search" button
+    Then I should see the message "Success"
+    And I should not see "First Item" in the results
+
+  Scenario: List inventory items
+    When I visit the "Home Page"
+    And I press the "List" button
+    Then I should see the message "Success"
+    And I should see "First Item" in the results
+
+  Scenario: Query inventory items by category
+    When I visit the "Home Page"
+    And I set the "Category" to "test"
+    And I press the "Query" button
+    Then I should see the message "Success"
+    And I should see "test" in the results
+
+  Scenario: Perform an action on an inventory item
+    When I visit the "Home Page"
+    And I set the "Name" to "First Item"
+    And I press the "Search" button
+    Then I should see the message "Success"
+    And I should see "First Item" in the "Name" field
+    When I copy the "Id" field
+    And I press the "Clear" button
+    And I paste the "Id" field
+    And I press the "Action" button
+    Then I should see the message "Success"
