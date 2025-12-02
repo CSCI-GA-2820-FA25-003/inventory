@@ -27,12 +27,13 @@ from service.common import status
 from service.models import db, Inventory
 from .factories import InventoryFactory
 from urllib.parse import quote_plus
+
 from service.routes import check_content_type
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
 )
-BASE_URL = "/inventory"
+BASE_URL = "/api/inventory"
 
 ######################################################################
 #  T E S T   C A S E S

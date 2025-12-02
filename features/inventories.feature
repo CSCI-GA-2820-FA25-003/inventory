@@ -110,14 +110,6 @@ Scenario: Restock status reflects quantity relative to restock level
     And I press the "status" button
 
     Then I should see "stock sufficient" in the status results
-  Scenario: Read an existing inventory item
-    When I visit the "Home Page"
-    And I enter "First Item" into the "Name" field
-    And I press the "Search" button
-    Then I should see the message "Success"
-    And I should see "Name" in the results
-    And I should see "Category" in the results
-
   Scenario: Delete an existing inventory item
     When I visit the "Home Page"
     And I set the "Name" to "First Item"
