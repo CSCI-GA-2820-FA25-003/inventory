@@ -268,6 +268,9 @@
             <label>Quantity
               <input id="quantity" name="quantity" type="number" min="0" value="0" required>
             </label>
+            <label>Restock Level
+                <input id="restock_level" name="restock_level" type="number" min="0" placeholder="Optional">
+            </label>
             <label>Category
               <input id="category" name="category" type="text" placeholder="E.g. Computer, Phone">
             </label>
@@ -276,6 +279,9 @@
             </label>
             <label>Price
               <input id="price" name="price" type="number" step="0.01" min="0" placeholder="USD">
+            </label>
+            <label>Restock Level
+              <input id="restock_level" name="restock_level" type="number" min="0" placeholder="e.g. 10">
             </label>
             <label class="checkbox">
               <input id="available" name="available" type="checkbox" checked>
@@ -288,6 +294,34 @@
           <h3>result</h3>
           <pre id="result" class="result" aria-live="polite"></pre>
           <small>The response will include the submitted payload to aid in troubleshooting.</small>
+        </section>
+        <section class="card">
+          <h2>Check Restock Level</h2>
+          <form id="status-form">
+            <label>Inventory ID
+              <input id="status-id" name="inventory_id" type="number" min="1" placeholder="Enter Inventory ID" required>
+            </label>
+            <div class="actions">
+              <button id="status" type="button">Check Status</button>
+            </div>
+          </form>
+          <h3>result</h3>
+          <pre id="status-result" class="result" aria-live="polite"></pre>
+          <small>The REST path for this operation is: GET /inventory/&lt;id&gt;/restock-status</small>
+        </section>
+        <section class="card">
+          <h2>Read Inventory</h2>
+          <form id="read-form">
+            <label>Inventory ID
+              <input id="read-id" name="inventory_id" type="number" min="1" placeholder="Enter Inventory ID" required>
+            </label>
+            <div class="actions">
+              <button id="read" type="button">Read</button>
+            </div>
+          </form>
+          <h3>result</h3>
+          <pre id="read-result" class="result" aria-live="polite"></pre>
+          <small>The REST path for this operation is: GET /inventories/&lt;id&gt;</small>
         </section>
 
         <section class="card">
@@ -696,6 +730,7 @@
           name: (val('name') || "").trim(),
           sku: (val('sku') || "").trim(),
           quantity: Number(val('quantity') || "0"),
+          restock_level: val('restock_level') === "" ? null : Number(val('restock_level')),
           category: (val('category') || "").trim() || null,
           description: (val('description') || "").trim() || null,
           price: val('price') === "" ? null : Number(val('price')),
@@ -741,6 +776,33 @@
         } catch (err) {
           result.textContent = `Status 0\n` + String(err);
         }
+      });
+
+      // Stock Status handler: GET /inventory/<id>/restock-status
+      document.getElementById('status').addEventListener('click', async () => {
+        const result = document.getElementById('status-result');
+        const id = (val('status-id') || "").trim();
+
+        if (!id) {
+          result.textContent = "Provide an inventory id.";
+          return;
+        }
+
+        result.textContent = `Checking stock status for inventory ${id}...`;
+
+        try {
+          const res = await fetch(`/inventory/${encodeURIComponent(id)}/restock-status`, {
+            method: 'GET',
+          });
+
+          const text = await res.text();
+          result.textContent = `Status ${res.status}\n` + text;
+
+        } catch (err) {
+          result.textContent = `Status 0\n` + String(err);
+        }
+      });
+
         });
       }
     </script>

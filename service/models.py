@@ -17,7 +17,7 @@ class DataValidationError(Exception):
     """Used for an data validation errors when deserializing"""
 
 
-class Inventory(db.Model):
+class Inventory(db.Model):  # pylint: disable=too-many-instance-attributes
     """
     Class that represents a Inventory
     """
@@ -36,6 +36,7 @@ class Inventory(db.Model):
 
     # inventory & pricing
     quantity = db.Column(db.Integer, nullable=False, default=0)
+    restock_level = db.Column(db.Integer, nullable=True)
     price = db.Column(db.Numeric(10, 2))
 
     # availability
@@ -92,6 +93,15 @@ class Inventory(db.Model):
             logger.error("Error deleting record: %s", self)
             raise DataValidationError(e) from e
 
+    @property
+    def stock_status(self):
+        """Returns stock status based on quantity and restock_level."""
+        if self.restock_level is None:
+            return "undefined"
+        if self.quantity <= self.restock_level:
+            return "stock insufficient"
+        return "stock sufficient"
+
     def serialize(self):
         """Serializes an Inventory into a dictionary"""
         return {
@@ -101,6 +111,8 @@ class Inventory(db.Model):
             "description": self.description,
             "sku": self.sku,
             "quantity": self.quantity,
+            "restock_level": self.restock_level,
+            "stock_status": self.stock_status,
             "price": float(self.price) if self.price else None,
             "available": self.available,
             "created_at": self.created_at,
@@ -120,6 +132,7 @@ class Inventory(db.Model):
             self.description = data.get("description")
             self.sku = data["sku"]
             self.quantity = data["quantity"]
+            self.restock_level = data.get("restock_level")
             self.price = data.get("price")
             self.available = data.get("available", True)
         except AttributeError as error:

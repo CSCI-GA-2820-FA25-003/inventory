@@ -219,6 +219,45 @@ def step_see_results(context: Any, name: str) -> None:
     assert found
 
 
+@when("I copy the id from the create result")
+def step_copy_id_from_create(context):
+    """Extract the created inventory ID from the 'result' pre block."""
+    text = context.browser.find_element(By.ID, "result").text
+    # Find the first occurrence of `"id": <number>` in JSON
+    import re
+
+    match = re.search(r'"id"\s*:\s*(\d+)', text)
+    assert match, f"Could not find an 'id' in result:\n{text}"
+    context.copied_id = match.group(1)
+
+
+@when('I enter the copied id into the "read-id" field')
+def step_enter_copied_id(context):
+    """Fill the read-id input field with the previously copied ID."""
+    assert hasattr(context, "copied_id"), "No copied_id found. Did you call copy step?"
+    elem = context.browser.find_element(By.ID, "read-id")
+    elem.clear()
+    elem.send_keys(context.copied_id)
+
+
+@then('I should see "{value}" in the read results')
+def step_see_in_read_results(context, value):
+    """Assert that the read-result block contains a given value."""
+    text = context.browser.find_element(By.ID, "read-result").text
+    assert value in text, f"Expected '{value}' in read results, got:\n{text}"
+
+
+@when('I enter the copied id into the "status-id" field')
+def step_enter_copied_id_status(context):
+    elem = context.browser.find_element(By.ID, "status-id")
+    elem.clear()
+    elem.send_keys(context.copied_id)
+
+
+@then('I should see "{value}" in the status results')
+def step_see_status_result(context, value):
+    text = context.browser.find_element(By.ID, "status-result").text
+    assert value in text, f"Expected '{value}' in restock results, got:\n{text}"
 @then('I should not see "{name}" in the results')
 def step_not_see_results(context: Any, name: str) -> None:
     """Assert that the results area no longer includes the provided text."""
