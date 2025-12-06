@@ -9,7 +9,7 @@ Inventory Service using Flask-RESTX + Swagger
 Refactored from plain Flask routes to RESTX Resource classes.
 """
 
-from flask import current_app as app
+from flask import current_app as app, render_template
 from flask_restx import Api, Resource, fields, reqparse, inputs
 from flask import request
 
