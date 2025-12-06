@@ -268,9 +268,6 @@
             <label>Quantity
               <input id="quantity" name="quantity" type="number" min="0" value="0" required>
             </label>
-            <label>Restock Level
-                <input id="restock_level" name="restock_level" type="number" min="0" placeholder="Optional">
-            </label>
             <label>Category
               <input id="category" name="category" type="text" placeholder="E.g. Computer, Phone">
             </label>
@@ -307,7 +304,7 @@
           </form>
           <h3>result</h3>
           <pre id="status-result" class="result" aria-live="polite"></pre>
-          <small>The REST path for this operation is: GET /inventory/&lt;id&gt;/restock-status</small>
+          <small>The REST path for this operation is: GET /api/inventory/&lt;id&gt;/restock-status</small>
         </section>
         <section class="card">
           <h2>Read Inventory</h2>
@@ -321,7 +318,7 @@
           </form>
           <h3>result</h3>
           <pre id="read-result" class="result" aria-live="polite"></pre>
-          <small>The REST path for this operation is: GET /inventories/&lt;id&gt;</small>
+          <small>The REST path for this operation is: GET /api/inventory/&lt;id&gt;</small>
         </section>
 
         <section class="card">
@@ -336,7 +333,7 @@
           </form>
           <h3>result</h3>
           <pre id="delete-result" class="result" aria-live="polite"></pre>
-          <small>The REST path for the delete operation is:DELETE /inventory/&lt;id&gt;</small>
+          <small>The REST path for the delete operation is: DELETE /api/inventory/&lt;id&gt;</small>
         </section>
       </div>
     </div>
@@ -345,6 +342,9 @@
       // Safe getters by id
       function val(id) { const el = document.getElementById(id); return el ? el.value : ""; }
       function boolChecked(id) { const el = document.getElementById(id); return !!(el && el.checked); }
+
+      const API_BASE = "/api";
+      const INVENTORY_BASE = `${API_BASE}/inventory`;
 
       function setFlash(message, isError = false) {
         const flash = document.getElementById('flash_message');
@@ -357,7 +357,7 @@
 
       function formatInventoryLine(inv) {
         if (!inv || typeof inv !== "object") {
-          return String(inv ?? "");
+          return String(inv === undefined || inv === null ? "" : inv);
         }
         const parts = [];
         if (Object.prototype.hasOwnProperty.call(inv, "id")) {
@@ -367,10 +367,12 @@
           parts.push(`Name: ${inv.name}`);
         }
         if (Object.prototype.hasOwnProperty.call(inv, "category")) {
-          parts.push(`Category: ${inv.category ?? "-"}`);
+          const categoryValue = inv.category === undefined || inv.category === null ? "-" : inv.category;
+          parts.push(`Category: ${categoryValue}`);
         }
         if (Object.prototype.hasOwnProperty.call(inv, "sku")) {
-          parts.push(`SKU: ${inv.sku ?? "-"}`);
+          const skuValue = inv.sku === undefined || inv.sku === null ? "-" : inv.sku;
+          parts.push(`SKU: ${skuValue}`);
         }
         if (Object.prototype.hasOwnProperty.call(inv, "quantity")) {
           parts.push(`Qty: ${inv.quantity}`);
@@ -531,7 +533,7 @@
           }
           setFlash("Searching...");
           try {
-            const res = await fetch(`/inventory?name=${encodeURIComponent(name)}`);
+            const res = await fetch(`${INVENTORY_BASE}?name=${encodeURIComponent(name)}`);
             if (!res.ok) {
               const body = await res.text();
               renderResults(body || `Error ${res.status}`);
@@ -555,7 +557,7 @@
         listBtn.addEventListener('click', async () => {
           setFlash("Listing...");
           try {
-            const res = await fetch("/inventory");
+            const res = await fetch(INVENTORY_BASE);
             if (!res.ok) {
               const body = await res.text();
               renderResults(body || `Error ${res.status}`);
@@ -581,7 +583,7 @@
           }
           setFlash("Querying...");
           try {
-            const res = await fetch(`/inventory?category=${encodeURIComponent(category)}`);
+            const res = await fetch(`${INVENTORY_BASE}?category=${encodeURIComponent(category)}`);
             if (!res.ok) {
               const body = await res.text();
               renderResults(body || `Error ${res.status}`);
@@ -606,7 +608,7 @@
           }
           setFlash("Retrieving...");
           try {
-            const res = await fetch(`/inventory/${encodeURIComponent(id)}`);
+            const res = await fetch(`${INVENTORY_BASE}/${encodeURIComponent(id)}`);
             if (!res.ok) {
               const body = await res.text();
               renderResults(body || `Error ${res.status}`);
@@ -639,7 +641,7 @@
           }
           setFlash("Updating...");
           try {
-            const { response, body } = await fetchJsonOrText(`/inventory/${encodeURIComponent(id)}`, {
+            const { response, body } = await fetchJsonOrText(`${INVENTORY_BASE}/${encodeURIComponent(id)}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload)
@@ -669,7 +671,7 @@
           }
           setFlash("Deleting...");
           try {
-            const res = await fetch(`/inventory/${encodeURIComponent(id)}`, { method: 'DELETE' });
+            const res = await fetch(`${INVENTORY_BASE}/${encodeURIComponent(id)}`, { method: 'DELETE' });
             if (res.status === 204) {
               renderResults(`Deleted inventory ${id}.`);
               setFlash("Success");
@@ -693,7 +695,7 @@
           }
           setFlash("Running action...");
           try {
-            const { response, body } = await fetchJsonOrText(`/inventory/${encodeURIComponent(id)}/purchase`, {
+            const { response, body } = await fetchJsonOrText(`${INVENTORY_BASE}/${encodeURIComponent(id)}/purchase`, {
               method: 'PUT'
             });
             if (!response.ok) {
@@ -719,90 +721,135 @@
         });
       }
 
-      // Send JSON to /inventories on button click and always write a result (success or error).
+      // Send JSON to /api/inventory on button click and always write a result (success or error).
       const submitBtn = document.getElementById('submit');
       if (submitBtn) {
         submitBtn.addEventListener('click', async () => {
-        const result = document.getElementById('result');
+          const result = document.getElementById('result');
+          if (!result) {
+            console.warn('Missing result element');
+            return;
+          }
 
-        // Build payload explicitly from element ids (avoid HTMLFormElement.name collision)
-        const payload = {
-          name: (val('name') || "").trim(),
-          sku: (val('sku') || "").trim(),
-          quantity: Number(val('quantity') || "0"),
-          restock_level: val('restock_level') === "" ? null : Number(val('restock_level')),
-          category: (val('category') || "").trim() || null,
-          description: (val('description') || "").trim() || null,
-          price: val('price') === "" ? null : Number(val('price')),
-          available: boolChecked('available')
-        };
+          // Build payload explicitly from element ids (avoid HTMLFormElement.name collision)
+          const payload = {
+            name: (val('name') || "").trim(),
+            sku: (val('sku') || "").trim(),
+            quantity: Number(val('quantity') || "0"),
+            restock_level: val('restock_level') === "" ? null : Number(val('restock_level')),
+            category: (val('category') || "").trim() || null,
+            description: (val('description') || "").trim() || null,
+            price: val('price') === "" ? null : Number(val('price')),
+            available: boolChecked('available')
+          };
 
-        // Show payload for debugging before sending
-        result.textContent = 'Submitting...\nPayload: ' + JSON.stringify(payload);
+          // Show payload for debugging before sending
+          result.textContent = 'Submitting...\nPayload: ' + JSON.stringify(payload);
 
-        try {
-          const res = await fetch('/inventories', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          const text = await res.text();
-          // Echo payload with the response to aid debugging in headless runs
-          result.textContent = `Status ${res.status}\n` + text + `\nEcho-Payload: ` + JSON.stringify(payload);
-        } catch (err) {
-          result.textContent = `Status 0\n` + String(err) + `\nEcho-Payload: ` + JSON.stringify(payload);
-        }
+          try {
+            const res = await fetch(INVENTORY_BASE, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const text = await res.text();
+            // Echo payload with the response to aid debugging in headless runs
+            result.textContent = `Status ${res.status}\n` + text + `\nEcho-Payload: ` + JSON.stringify(payload);
+          } catch (err) {
+            result.textContent = `Status 0\n` + String(err) + `\nEcho-Payload: ` + JSON.stringify(payload);
+          }
         });
       }
 
-      // Delete handler targets /inventory/<id>
+      // Delete handler targets /api/inventory/<id>
       const deleteBtn = document.getElementById('delete');
       if (deleteBtn) {
         deleteBtn.addEventListener('click', async () => {
-        const result = document.getElementById('delete-result');
-        const id = (val('delete-id') || "").trim();
+          const result = document.getElementById('delete-result');
+          if (!result) {
+            console.warn('Missing delete result element');
+            return;
+          }
+          const id = (val('delete-id') || "").trim();
 
-        if (!id) {
-          result.textContent = "Provide an inventory id to delete.";
-          return;
-        }
+          if (!id) {
+            result.textContent = "Provide an inventory id to delete.";
+            return;
+          }
 
-        result.textContent = `Deleting inventory ${id}...`;
-        try {
-          const res = await fetch(`/inventory/${encodeURIComponent(id)}`, { method: 'DELETE' });
-          const body = await res.text();
-          const ok = res.status === 204;
-          result.textContent = `Status ${res.status}\n` + (ok ? `Inventory ${id} deleted.` : body || "Unexpected response.");
-        } catch (err) {
-          result.textContent = `Status 0\n` + String(err);
-        }
-      });
+          result.textContent = `Deleting inventory ${id}...`;
+          try {
+            const res = await fetch(`${INVENTORY_BASE}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+            const body = await res.text();
+            const ok = res.status === 204;
+            result.textContent = `Status ${res.status}\n` + (ok ? `Inventory ${id} deleted.` : body || "Unexpected response.");
+          } catch (err) {
+            result.textContent = `Status 0\n` + String(err);
+          }
+        });
+      }
 
-      // Stock Status handler: GET /inventory/<id>/restock-status
-      document.getElementById('status').addEventListener('click', async () => {
-        const result = document.getElementById('status-result');
-        const id = (val('status-id') || "").trim();
+      const statusBtn = document.getElementById('status');
+      if (statusBtn) {
+        statusBtn.addEventListener('click', async () => {
+          const result = document.getElementById('status-result');
+          if (!result) {
+            console.warn('Missing status result element');
+            return;
+          }
+          const id = (val('status-id') || "").trim();
 
-        if (!id) {
-          result.textContent = "Provide an inventory id.";
-          return;
-        }
+          if (!id) {
+            result.textContent = "Provide an inventory id.";
+            return;
+          }
 
-        result.textContent = `Checking stock status for inventory ${id}...`;
+          result.textContent = `Checking stock status for inventory ${id}...`;
 
-        try {
-          const res = await fetch(`/inventory/${encodeURIComponent(id)}/restock-status`, {
-            method: 'GET',
-          });
+          try {
+            const res = await fetch(`${INVENTORY_BASE}/${encodeURIComponent(id)}/restock-status`, {
+              method: 'GET',
+            });
 
-          const text = await res.text();
-          result.textContent = `Status ${res.status}\n` + text;
+            const text = await res.text();
+            result.textContent = `Status ${res.status}\n` + text;
 
-        } catch (err) {
-          result.textContent = `Status 0\n` + String(err);
-        }
-      });
+          } catch (err) {
+            result.textContent = `Status 0\n` + String(err);
+          }
+        });
+      }
 
+      const readBtn = document.getElementById('read');
+      if (readBtn) {
+        readBtn.addEventListener('click', async () => {
+          const result = document.getElementById('read-result');
+          if (!result) {
+            console.warn('Missing read result element');
+            return;
+          }
+          const id = (val('read-id') || "").trim();
+          if (!id) {
+            result.textContent = "Provide an inventory id.";
+            return;
+          }
+          result.textContent = `Fetching inventory ${id}...`;
+          try {
+            const res = await fetch(`${INVENTORY_BASE}/${encodeURIComponent(id)}`);
+            const text = await res.text();
+            if (!res.ok) {
+              result.textContent = `Status ${res.status}\n` + (text || "Not found.");
+              return;
+            }
+            try {
+              const data = text ? JSON.parse(text) : {};
+              result.textContent = `Status ${res.status}\n` + JSON.stringify(data, null, 2);
+            } catch (err) {
+              result.textContent = `Status ${res.status}\n` + text;
+            }
+          } catch (err) {
+            result.textContent = `Status 0\n` + String(err);
+          }
         });
       }
     </script>
