@@ -24,6 +24,10 @@ spec:
       name: BASE_URL
       type: string
 
+  workspaces:
+    - name: pipeline-workspace
+      description: Shared workspace for cloned source and build artifacts.
+
   tasks:
     - name: git-clone
       params:
@@ -68,4 +72,62 @@ spec:
         resolver: cluster
       workspaces:
         - name: output
+          workspace: pipeline-workspace
+
+    - name: lint
+      runAfter:
+        - git-clone
+      taskRef:
+        name: pylint
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+
+    - name: unit-tests
+      runAfter:
+        - git-clone
+      taskRef:
+        name: pytest-env
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+
+    - name: build-image
+      runAfter:
+        - lint
+        - unit-tests
+      params:
+        - name: IMAGE
+          value: $(params.IMAGE_NAME)
+        - name: DOCKERFILE
+          value: ./Dockerfile
+        - name: CONTEXT
+          value: .
+        - name: TLSVERIFY
+          value: "false"
+      taskRef:
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: buildah
+          - name: namespace
+            value: openshift-pipelines
+        resolver: cluster
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+
+    - name: deploy
+      runAfter:
+        - build-image
+      params:
+        - name: image-name
+          value: $(params.IMAGE_NAME)
+        - name: manifest-dir
+          value: k8s
+      taskRef:
+        name: deploy-image
+      workspaces:
+        - name: source
           workspace: pipeline-workspace
