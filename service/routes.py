@@ -37,13 +37,19 @@ api = Api(
 @app.route("/")
 def index():
     """Root URL response"""
-    return app.send_static_file("index.html")
+    return render_template("inventory.html")
 
 
 @app.route("/inventory/new")
 def new_inventory_form():
     """Render the HTML form for BDD tests"""
-    return app.send_static_file("index.html")
+    return render_template("inventory.html")
+
+
+@app.route("/inventories/new")
+def new_inventory_form_plural():
+    """Render the BDD form (plural route for compatibility)."""
+    return render_template("inventory.html")
 
 
 ######################################################################
