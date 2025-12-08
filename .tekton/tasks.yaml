@@ -195,6 +195,10 @@ spec:
           echo "OC APPLY..."
           oc apply -f $(params.manifest-dir)/deployment.yaml
           oc apply -f $(params.manifest-dir)/service.yaml
+          if [ -f "$(params.manifest-dir)/route.yaml" ]; then
+            echo "Applying route $(params.manifest-dir)/route.yaml"
+            oc apply -f $(params.manifest-dir)/route.yaml
+          fi
 
           echo "************************************************************"
           sleep 3
