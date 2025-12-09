@@ -9,9 +9,8 @@ Inventory Service using Flask-RESTX + Swagger
 Refactored from plain Flask routes to RESTX Resource classes.
 """
 
-from flask import current_app as app
+from flask import current_app as app, request
 from flask_restx import Api, Resource, fields, reqparse, inputs
-from flask import request
 
 
 from service.models import Inventory
@@ -53,6 +52,7 @@ def new_inventory_form():
 
 @app.route("/health", methods=["GET"])
 def health():
+    """Simple readiness probe used by OpenShift/Kubernetes"""
     return {"status": "OK"}, 200
 
 
@@ -233,6 +233,7 @@ class InventoryPurchase(Resource):
     @api.response(404, "Inventory not found")
     @api.response(409, "Inventory not available")
     def put(self, inventory_id):
+        """Mark an inventory item unavailable when it is purchased"""
         inv = Inventory.find(inventory_id)
         if not inv:
             abort(
@@ -262,6 +263,7 @@ class InventoryRestockStatus(Resource):
 
     @api.response(404, "Inventory not found")
     def get(self, inventory_id):
+        """Report whether more stock is needed for the item"""
         inv = Inventory.find(inventory_id)
         if not inv:
             abort(

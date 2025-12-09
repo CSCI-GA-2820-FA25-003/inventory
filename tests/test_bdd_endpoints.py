@@ -1,17 +1,19 @@
-# tests/test_bdd_endpoints.py
-# Cover BDD/UI-only routes
+"""BDD-style smoke tests that exercise REST endpoints."""
 
 import uuid
+
 import pytest
-from wsgi import app  # uses create_app() and registers routes
+
 from service.common import status
+from wsgi import app  # uses create_app() and registers routes
 
 
-@pytest.fixture()
-def client():
+@pytest.fixture(name="client")
+def client_fixture():
+    """Return a configured Flask test client for the API."""
     app.config["TESTING"] = True
-    with app.test_client() as c:
-        yield c
+    with app.test_client() as client:
+        yield client
 
 
 def test_bdd_create_inventory_success(client):

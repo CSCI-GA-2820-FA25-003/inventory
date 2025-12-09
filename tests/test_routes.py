@@ -19,16 +19,17 @@ TestInventory API Service Test Suite
 """
 
 # pylint: disable=duplicate-code
-import os
 import logging
-from unittest import TestCase
-from wsgi import app
-from service.common import status
-from service.models import db, Inventory
-from .factories import InventoryFactory
+import os
 from urllib.parse import quote_plus
+from unittest import TestCase
 
+from service.common import status
+from service.models import Inventory, db
 from service.routes import check_content_type
+from wsgi import app
+
+from .factories import InventoryFactory
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"

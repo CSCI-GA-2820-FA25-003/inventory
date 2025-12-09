@@ -19,13 +19,15 @@ Test cases for Inventory Model
 """
 
 # pylint: disable=duplicate-code
-import os
 import logging
+import os
 from unittest import TestCase
-from wsgi import app
-from service.models import Inventory, DataValidationError, db
-from .factories import InventoryFactory
 from unittest.mock import patch
+
+from service.models import DataValidationError, Inventory, db
+from wsgi import app
+
+from .factories import InventoryFactory
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
@@ -211,7 +213,9 @@ class TestInventory(TestCase):
             inventory.deserialize({"name": "item"})
 
         # AttributeError: object supports indexing (data["name"]) but has no .get()
-        class NoGet:
+        class NoGet:  # pylint: disable=too-few-public-methods
+            """Simple mapping-like object missing .get()"""
+
             def __init__(self, d):
                 self._d = d
 

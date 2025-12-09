@@ -1,19 +1,17 @@
-"""
-Test Factory to make fake objects for testing
-"""
+"""Test Factory helpers used by multiple test modules."""
 
-import factory
-
-# from faker import Faker
-from service.models import Inventory
 from datetime import datetime
 import random
 
+import factory
 
-class InventoryFactory(factory.Factory):
+from service.models import Inventory
+
+
+class InventoryFactory(factory.Factory):  # pylint: disable=too-few-public-methods
     """Creates fake inventory items"""
 
-    class Meta:
+    class Meta:  # pylint: disable=too-few-public-methods
         """Maps factory to data model"""
 
         model = Inventory
