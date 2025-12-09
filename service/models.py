@@ -6,7 +6,6 @@ All of the models are stored in this module
 
 import logging
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import inspect, text
 
 logger = logging.getLogger("flask.app")
 
@@ -98,7 +97,7 @@ class Inventory(db.Model):  # pylint: disable=too-many-instance-attributes
     def stock_status(self):
         """Returns stock status based on quantity and restock_level."""
         if self.restock_level is None:
-            return "not configured"
+            return "undefined"
         if self.quantity <= self.restock_level:
             return "stock insufficient"
         return "stock sufficient"
@@ -216,14 +215,3 @@ class Inventory(db.Model):  # pylint: disable=too-many-instance-attributes
             raise TypeError("Invalid availability, must be of type boolean")
         logger.info("Processing available query for %s ...", available)
         return cls.query.filter(cls.available == available)
-
-
-def ensure_inventory_schema(engine=None):
-    """Ensure critical columns exist even if migrations haven't been run."""
-    engine = engine or db.get_engine()
-    inspector = inspect(engine)
-    columns = {col["name"] for col in inspector.get_columns("inventory")}
-    if "restock_level" not in columns:
-        # Add restock_level column for backward-compatible databases
-        with engine.begin() as connection:
-            connection.execute(text("ALTER TABLE inventory ADD COLUMN restock_level INTEGER"))

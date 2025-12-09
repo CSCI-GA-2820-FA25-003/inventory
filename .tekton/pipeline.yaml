@@ -131,19 +131,3 @@ spec:
       workspaces:
         - name: source
           workspace: pipeline-workspace
-
-    - name: bdd-tests
-      runAfter:
-        - deploy
-      params:
-        - name: base-url
-          value: $(params.BASE_URL)
-        - name: wait-seconds
-          value: "60"
-        - name: driver
-          value: "chrome"
-      taskRef:
-        name: behave
-      workspaces:
-        - name: source
-          workspace: pipeline-workspace

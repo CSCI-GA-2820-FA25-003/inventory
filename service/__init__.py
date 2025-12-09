@@ -35,7 +35,7 @@ def create_app():
 
     # Initialize Plugins
     # pylint: disable=import-outside-toplevel
-    from service.models import db, ensure_inventory_schema
+    from service.models import db
 
     db.init_app(app)
 
@@ -47,7 +47,6 @@ def create_app():
 
         try:
             db.create_all()
-            ensure_inventory_schema()
         except Exception as error:  # pylint: disable=broad-except
             app.logger.critical("%s: Cannot continue", error)
             # gunicorn requires exit code 4 to stop spawning workers when they die
