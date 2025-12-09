@@ -9,7 +9,7 @@ Inventory Service using Flask-RESTX + Swagger
 Refactored from plain Flask routes to RESTX Resource classes.
 """
 
-from flask import current_app as app, request
+from flask import current_app as app, render_template, request
 from flask_restx import Api, Resource, fields, reqparse, inputs
 
 
@@ -36,13 +36,13 @@ api = Api(
 @app.route("/")
 def index():
     """Root URL response"""
-    return app.send_static_file("index.html")
+    return render_template("inventory.html")
 
 
 @app.route("/inventory/new")
 def new_inventory_form():
     """Render the HTML form for BDD tests"""
-    return app.send_static_file("index.html")
+    return render_template("inventory.html")
 
 
 ######################################################################
