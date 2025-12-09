@@ -19,8 +19,8 @@ spec:
       description: The name of the image to build
       name: IMAGE_NAME
       type: string
-    - default: "http://localhost:8080/inventories/new"
-      description: Base URL to inventory service
+    - default: "http://localhost:8080"
+      description: Base URL to inventory service (no trailing path)
       name: BASE_URL
       type: string
 
@@ -128,6 +128,22 @@ spec:
           value: k8s
       taskRef:
         name: deploy-image
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+
+    - name: behave
+      runAfter:
+        - deploy
+      params:
+        - name: base-url
+          value: $(params.BASE_URL)
+        - name: wait-seconds
+          value: "60"
+        - name: driver
+          value: chrome
+      taskRef:
+        name: behave
       workspaces:
         - name: source
           workspace: pipeline-workspace
