@@ -299,7 +299,7 @@
               <input id="status-id" name="inventory_id" type="number" min="1" placeholder="Enter Inventory ID" required>
             </label>
             <div class="actions">
-              <button id="status" type="button">Check Status</button>
+              <button id="status-btn" type="button">Check Status</button>
             </div>
           </form>
           <h3>result</h3>
@@ -313,7 +313,7 @@
               <input id="read-id" name="inventory_id" type="number" min="1" placeholder="Enter Inventory ID" required>
             </label>
             <div class="actions">
-              <button id="read" type="button">Read</button>
+              <button id="read-btn" type="button">Read</button>
             </div>
           </form>
           <h3>result</h3>
@@ -523,12 +523,35 @@
         return { response, body };
       }
 
+      async function fetchAllInventories(pendingMessage = "Listing...") {
+        setFlash(pendingMessage);
+        try {
+          const res = await fetch(INVENTORY_BASE);
+          if (!res.ok) {
+            const body = await res.text();
+            renderResults(body || `Error ${res.status}`);
+            setFlash(body || `Error ${res.status}`, true);
+            return false;
+          }
+          const data = await res.json();
+          renderResults(data);
+          setFlash("Success");
+          return true;
+        } catch (err) {
+          setFlash(`Error: ${err.message || err}`, true);
+          return false;
+        }
+      }
+
       const searchBtn = document.getElementById('search-btn');
       if (searchBtn) {
         searchBtn.addEventListener('click', async () => {
           const name = (val('inventory_name') || "").trim();
           if (!name) {
-            setFlash("Please enter a Name before searching.", true);
+            const ok = await fetchAllInventories("Listing all inventory...");
+            if (ok) {
+              setFlash("Success");
+            }
             return;
           }
           setFlash("Searching...");
@@ -554,22 +577,8 @@
 
       const listBtn = document.getElementById('list-btn');
       if (listBtn) {
-        listBtn.addEventListener('click', async () => {
-          setFlash("Listing...");
-          try {
-            const res = await fetch(INVENTORY_BASE);
-            if (!res.ok) {
-              const body = await res.text();
-              renderResults(body || `Error ${res.status}`);
-              setFlash(body || `Error ${res.status}`, true);
-              return;
-            }
-            const data = await res.json();
-            renderResults(data);
-            setFlash("Success");
-          } catch (err) {
-            setFlash(`Error: ${err.message || err}`, true);
-          }
+        listBtn.addEventListener('click', () => {
+          fetchAllInventories("Listing...");
         });
       }
 
@@ -789,7 +798,7 @@
         });
       }
 
-      const statusBtn = document.getElementById('status');
+      const statusBtn = document.getElementById('status-btn');
       if (statusBtn) {
         statusBtn.addEventListener('click', async () => {
           const result = document.getElementById('status-result');
@@ -820,7 +829,7 @@
         });
       }
 
-      const readBtn = document.getElementById('read');
+      const readBtn = document.getElementById('read-btn');
       if (readBtn) {
         readBtn.addEventListener('click', async () => {
           const result = document.getElementById('read-result');
@@ -853,3 +862,5 @@
         });
       }
     </script>
+  </body>
+</html>

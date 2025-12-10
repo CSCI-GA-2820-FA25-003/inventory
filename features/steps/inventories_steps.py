@@ -18,7 +18,7 @@ CLIPBOARD_ATTR = "_clipboard_value"
 
 def _open_create_page(context):
     """Navigate to the Create Inventory UI page."""
-    context.browser.get(f"{BASE_URL}/inventories/new")
+    context.browser.get(f"{BASE_URL}/inventory/new")
 
 
 def _field_id(element_name: str) -> str:
@@ -69,12 +69,12 @@ def _js_set_value(context, elem_id, value):
 def step_open_create_page(context):
     """Ensure the Create page is open and the submit button is present."""
     _open_create_page(context)
-    WebDriverWait(context.browser, 15).until(
+    WebDriverWait(context.browser, WAIT_SECONDS).until(
         EC.presence_of_element_located((By.ID, "submit"))
     )
 
 
-@when("I fill the form with:")
+@when("I fill the form with")
 def step_fill_form(context):
     """
     Fill the form with a data table having keys:
@@ -82,13 +82,24 @@ def step_fill_form(context):
     Keys are trimmed and lower-cased to avoid whitespace/case issues.
     """
     data = {}
+
+    def _store_pair(label, value):
+        label = (label or "").strip().lower()
+        value = (value or "").strip()
+        if label:
+            data[label] = value
+
+    headings = getattr(context.table, "headings", None)
+    if headings and len(headings) >= 2:
+        heading_key = headings[0].strip().lower()
+        heading_value = headings[1].strip()
+        if heading_key not in {"field", "attribute", "column", "key"}:
+            _store_pair(heading_key, heading_value)
+
     for row in context.table:
         cells = list(row.cells)
         if len(cells) >= 2:
-            key = cells[0].strip().lower()
-            value = cells[1].strip()
-            data[key] = value
-
+            _store_pair(cells[0], cells[1])
     # Fallback for 'name': ensure it is never empty
     name_value = (data.get("name") or "").strip()
     if not name_value:
@@ -101,6 +112,7 @@ def step_fill_form(context):
     _js_set_value(context, "category", data.get("category", "gadgets"))
     _js_set_value(context, "description", data.get("description", "autofilled by test"))
     _js_set_value(context, "price", data.get("price", "12.50"))
+    _js_set_value(context, "restock_level", data.get("restock_level", ""))
 
     # Checkbox: available (default true)
     available_str = (data.get("available", "true") or "true").strip().lower()
@@ -130,11 +142,21 @@ def step_submit_form(context):
     )
 
 
-@then("I should see a success status 201")
-def step_see_201(context):
-    """Assert that the result area begins with Status 201; print result for diagnostics."""
-    text = context.browser.find_element(By.ID, "result").text
-    assert text.startswith("Status 201"), f"Expected 201, got:\n{text}"
+STATUS_PANEL_IDS = ["result", "read-result", "status-result", "delete-result"]
+
+
+@then("I should see a success status {code:d}")
+def step_see_status_code(context, code: int):
+    """Generic status assertion scanning the known result blocks."""
+    expected = f"Status {code}"
+    for elem_id in STATUS_PANEL_IDS:
+        try:
+            text = context.browser.find_element(By.ID, elem_id).text.strip()
+        except Exception:
+            continue
+        if text.startswith(expected):
+            return
+    raise AssertionError(f"Could not find '{expected}' in any status panel.")
 
 
 @then("I should see a failure status 409")
@@ -157,10 +179,20 @@ def step_return_page(context):
     _open_create_page(context)
 
 
-@when('I visit the "Home Page"')
-def step_visit_home(context: Any) -> None:
-    """Open the application's home page."""
-    context.browser.get(BASE_URL)
+@when('I visit the "{page_name}" page')
+@when('I visit the "{page_name}"')
+def step_visit_named_page(context: Any, page_name: str) -> None:
+    """Navigate to a known page alias."""
+    normalized = page_name.strip().lower()
+    if normalized.endswith(" page"):
+        normalized = normalized[: -len(" page")].rstrip()
+    if "create inventory" in normalized:
+        _open_create_page(context)
+        return
+    if normalized in ("home", "home page"):
+        context.browser.get(BASE_URL)
+        return
+    raise AssertionError(f"Don't know how to navigate to '{page_name}'")
 
 
 @when('I enter "{text_string}" into the "{element_name}" field')
@@ -249,6 +281,7 @@ def step_see_in_read_results(context, value):
 
 @when('I enter the copied id into the "status-id" field')
 def step_enter_copied_id_status(context):
+    assert hasattr(context, "copied_id"), "No copied_id found. Did you call copy step?"
     elem = context.browser.find_element(By.ID, "status-id")
     elem.clear()
     elem.send_keys(context.copied_id)
@@ -256,6 +289,9 @@ def step_enter_copied_id_status(context):
 
 @then('I should see "{value}" in the status results')
 def step_see_status_result(context, value):
+    WebDriverWait(context.browser, WAIT_SECONDS).until(
+        EC.text_to_be_present_in_element((By.ID, "status-result"), value)
+    )
     text = context.browser.find_element(By.ID, "status-result").text
     assert value in text, f"Expected '{value}' in restock results, got:\n{text}"
 @then('I should not see "{name}" in the results')
