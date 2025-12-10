@@ -17,7 +17,8 @@ metadata:
   name: inventory-secret
 type: Opaque
 stringData:
-  DATABASE_URI: "postgresql+psycopg://postgres:pgs3cr3t@postgres:5432/postgres"
+  # Use the OpenShift-provisioned PostgreSQL service (deploymentconfig/postgresql)
+  DATABASE_URI: "postgresql+psycopg://postgres:pgs3cr3t@postgresql:5432/postgres"
 ---
 # Deployment
 apiVersion: apps/v1

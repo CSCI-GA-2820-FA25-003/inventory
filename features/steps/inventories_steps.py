@@ -74,7 +74,7 @@ def step_open_create_page(context):
     )
 
 
-@when("I fill the form with:")
+@when("I fill the form with")
 def step_fill_form(context):
     """
     Fill the form with a data table having keys:
@@ -82,13 +82,24 @@ def step_fill_form(context):
     Keys are trimmed and lower-cased to avoid whitespace/case issues.
     """
     data = {}
+
+    def _store_pair(label, value):
+        label = (label or "").strip().lower()
+        value = (value or "").strip()
+        if label:
+            data[label] = value
+
+    headings = getattr(context.table, "headings", None)
+    if headings and len(headings) >= 2:
+        heading_key = headings[0].strip().lower()
+        heading_value = headings[1].strip()
+        if heading_key not in {"field", "attribute", "column", "key"}:
+            _store_pair(heading_key, heading_value)
+
     for row in context.table:
         cells = list(row.cells)
         if len(cells) >= 2:
-            key = cells[0].strip().lower()
-            value = cells[1].strip()
-            data[key] = value
-
+            _store_pair(cells[0], cells[1])
     # Fallback for 'name': ensure it is never empty
     name_value = (data.get("name") or "").strip()
     if not name_value:
@@ -101,6 +112,7 @@ def step_fill_form(context):
     _js_set_value(context, "category", data.get("category", "gadgets"))
     _js_set_value(context, "description", data.get("description", "autofilled by test"))
     _js_set_value(context, "price", data.get("price", "12.50"))
+    _js_set_value(context, "restock_level", data.get("restock_level", ""))
 
     # Checkbox: available (default true)
     available_str = (data.get("available", "true") or "true").strip().lower()
@@ -168,9 +180,12 @@ def step_return_page(context):
 
 
 @when('I visit the "{page_name}" page')
+@when('I visit the "{page_name}"')
 def step_visit_named_page(context: Any, page_name: str) -> None:
     """Navigate to a known page alias."""
     normalized = page_name.strip().lower()
+    if normalized.endswith(" page"):
+        normalized = normalized[: -len(" page")].rstrip()
     if "create inventory" in normalized:
         _open_create_page(context)
         return
@@ -274,6 +289,9 @@ def step_enter_copied_id_status(context):
 
 @then('I should see "{value}" in the status results')
 def step_see_status_result(context, value):
+    WebDriverWait(context.browser, WAIT_SECONDS).until(
+        EC.text_to_be_present_in_element((By.ID, "status-result"), value)
+    )
     text = context.browser.find_element(By.ID, "status-result").text
     assert value in text, f"Expected '{value}' in restock results, got:\n{text}"
 @then('I should not see "{name}" in the results')

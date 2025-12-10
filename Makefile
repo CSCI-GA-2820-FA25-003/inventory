@@ -5,6 +5,8 @@ IMAGE_TAG ?= 1.0
 IMAGE ?= $(REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
 PLATFORM ?= "linux/amd64,linux/arm64"
 CLUSTER ?= nyu-devops
+BASE_URL ?= http://127.0.0.1:8000
+HEADLESS ?= true
 
 .SILENT:
 
@@ -135,8 +137,7 @@ k8s-delete:
 
 # BDD
 bdd:
-	BASE_URL=http://127.0.0.1:8000 HEADLESS=true behave -f progress2
+	BASE_URL=$(BASE_URL) HEADLESS=$(HEADLESS) pipenv run behave -f progress2
 
 bdd-local:
-	BASE_URL=http://localhost:8000 HEADLESS=false behave -f progress2
-
+	BASE_URL=$(BASE_URL) HEADLESS=false pipenv run behave -f progress2

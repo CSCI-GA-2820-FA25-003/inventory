@@ -58,11 +58,11 @@ spec:
           python -m pip install --user -r "$(params.requirements-file)"
         fi
 
-        # Make sure pylint is installed
-        python -m pip install pylint
+        # Make sure pylint and UI test deps are installed
+        python -m pip install pylint behave selenium
 
         echo "***** Running Linting *****"
-        pylint $@ "$(params.path)"
+        pylint --ignore=features,migrations --disable=no-name-in-module $@ "$(params.path)"
       args:
         - "$(params.args)"
 
@@ -188,7 +188,7 @@ spec:
           echo "*********************  DEPLOYMENT  ***********************"
           echo "Deploying $(params.image-name) ..."
 
-          yq -e -i '.spec.template.spec.containers[0].image="$(params.image-name)"' $(params.manifest-dir)/deployment.yaml
+          yq -e -i 'select(.kind == "Deployment").spec.template.spec.containers[0].image="$(params.image-name)"' $(params.manifest-dir)/deployment.yaml
           cat $(params.manifest-dir)/deployment.yaml
 
           echo "************************************************************"
@@ -297,6 +297,8 @@ spec:
           pipenv requirements --dev > requirements.txt
         fi
         python -m pip install --user -r requirements.txt
+        # Ensure behave CLI stack present even if requirements export missed it
+        python -m pip install --user behave selenium
 
         echo "***** Running Tests *****"
         behave

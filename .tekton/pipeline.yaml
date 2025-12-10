@@ -19,7 +19,7 @@ spec:
       description: The name of the image to build
       name: IMAGE_NAME
       type: string
-    - default: "http://localhost:8080"
+    - default: "https://inventory-route-dennis-w-dev.apps.rm2.thpm.p1.openshiftapps.com"
       description: Base URL to inventory service (no trailing path)
       name: BASE_URL
       type: string
