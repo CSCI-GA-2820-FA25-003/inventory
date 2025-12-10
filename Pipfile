@@ -23,6 +23,8 @@ pytest-cov = "~=6.0.0"
 factory-boy = "~=3.3.1"
 honcho = "~=2.0.0"
 httpie = "~=3.2.4"
+behave = "*"
+selenium = "*"
 
 [requires]
 python_version = "3.11"
