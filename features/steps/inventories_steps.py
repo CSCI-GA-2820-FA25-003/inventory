@@ -18,7 +18,7 @@ CLIPBOARD_ATTR = "_clipboard_value"
 
 def _open_create_page(context):
     """Navigate to the Create Inventory UI page."""
-    context.browser.get(f"{BASE_URL}/inventories/new")
+    context.browser.get(f"{BASE_URL}/inventory/new")
 
 
 def _field_id(element_name: str) -> str:
@@ -69,7 +69,7 @@ def _js_set_value(context, elem_id, value):
 def step_open_create_page(context):
     """Ensure the Create page is open and the submit button is present."""
     _open_create_page(context)
-    WebDriverWait(context.browser, 15).until(
+    WebDriverWait(context.browser, WAIT_SECONDS).until(
         EC.presence_of_element_located((By.ID, "submit"))
     )
 
@@ -130,11 +130,21 @@ def step_submit_form(context):
     )
 
 
-@then("I should see a success status 201")
-def step_see_201(context):
-    """Assert that the result area begins with Status 201; print result for diagnostics."""
-    text = context.browser.find_element(By.ID, "result").text
-    assert text.startswith("Status 201"), f"Expected 201, got:\n{text}"
+STATUS_PANEL_IDS = ["result", "read-result", "status-result", "delete-result"]
+
+
+@then("I should see a success status {code:d}")
+def step_see_status_code(context, code: int):
+    """Generic status assertion scanning the known result blocks."""
+    expected = f"Status {code}"
+    for elem_id in STATUS_PANEL_IDS:
+        try:
+            text = context.browser.find_element(By.ID, elem_id).text.strip()
+        except Exception:
+            continue
+        if text.startswith(expected):
+            return
+    raise AssertionError(f"Could not find '{expected}' in any status panel.")
 
 
 @then("I should see a failure status 409")
@@ -157,10 +167,17 @@ def step_return_page(context):
     _open_create_page(context)
 
 
-@when('I visit the "Home Page"')
-def step_visit_home(context: Any) -> None:
-    """Open the application's home page."""
-    context.browser.get(BASE_URL)
+@when('I visit the "{page_name}" page')
+def step_visit_named_page(context: Any, page_name: str) -> None:
+    """Navigate to a known page alias."""
+    normalized = page_name.strip().lower()
+    if "create inventory" in normalized:
+        _open_create_page(context)
+        return
+    if normalized in ("home", "home page"):
+        context.browser.get(BASE_URL)
+        return
+    raise AssertionError(f"Don't know how to navigate to '{page_name}'")
 
 
 @when('I enter "{text_string}" into the "{element_name}" field')
@@ -249,6 +266,7 @@ def step_see_in_read_results(context, value):
 
 @when('I enter the copied id into the "status-id" field')
 def step_enter_copied_id_status(context):
+    assert hasattr(context, "copied_id"), "No copied_id found. Did you call copy step?"
     elem = context.browser.find_element(By.ID, "status-id")
     elem.clear()
     elem.send_keys(context.copied_id)
